@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -19,8 +20,7 @@ namespace NodeMCU_Studio_2015
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
-    {
+    public partial class MainWindow : Window {
         public MainWindow() {
             InitializeComponent();
         }
@@ -31,7 +31,7 @@ namespace NodeMCU_Studio_2015
         }
 
         public static readonly DependencyProperty CommandModeProperty =
-            DependencyProperty.Register( nameof(CommandMode) , typeof(bool) , typeof(MainWindow) , new PropertyMetadata( false, OnChanged ) );
+            DependencyProperty.Register( nameof(CommandMode) , typeof(bool) , typeof(MainWindow) , new PropertyMetadata( false , OnChanged ) );
 
         private static void OnChanged( DependencyObject d , DependencyPropertyChangedEventArgs e ) {
             var main = d as MainWindow;
@@ -61,22 +61,21 @@ namespace NodeMCU_Studio_2015
             Workspace.Instance.OnDataReceived += ( se2 , txt ) => {
                 this.output.Dispatcher.Invoke( new Action( () => {
                     this.output.Text = this.output.Text + txt.Text;
-                } ) );
+                    this.output.SelectionStart = this.output.Text.Length;
+                } ),    DispatcherPriority.Normal);
             };
 
             Workspace.Instance.OnTimeout += ( se3 , arg1 ) => {
-                this.Dispatcher.Invoke( new Action(()=>{
+                this.Dispatcher.Invoke( new Action( () => {
                     MessageBox.Show( "COM Port TimeoutException Occurred, \nPlease Check The Com Port And Restart this Application" , "Error" , MessageBoxButton.OK , MessageBoxImage.Error );
-                }) );
+                } ) );
             };
 
             SerialSetting setting = new SerialSetting();
             setting.Owner = this;
             var ret = setting.ShowDialog();
-            
+
             if ( ret.HasValue && ret == true ) {
-
-
                 Binding bind = new Binding( "ProjectList" );
                 bind.Source = Workspace.Instance;
                 bind.Mode = BindingMode.OneWay;
@@ -90,7 +89,7 @@ namespace NodeMCU_Studio_2015
             if ( e.RemovedItems.Count > 0 ) {
                 foreach ( var item in e.RemovedItems ) {
                     var proj = item as LuaProject;
-                    proj?.Save(this.codeedit.Text);
+                    proj?.Save( this.codeedit.Text );
                 }
             }
             var listbox = sender as ListBox;
@@ -100,12 +99,12 @@ namespace NodeMCU_Studio_2015
         }
 
         private void download_button_Click( Object sender , RoutedEventArgs e ) {
-           
+
             var listbox = this.lua_programs_list;
             var project = listbox?.SelectedItem as LuaProject;
             if ( project != null ) {
-                project.Save(this.codeedit.Text);
-                Workspace.Instance.Write( project, ()=> { this.DoEvent();  } );
+                project.Save( this.codeedit.Text );
+                Workspace.Instance.Write( project , () => { this.DoEvent(); } );
             }
         }
 
@@ -140,19 +139,6 @@ namespace NodeMCU_Studio_2015
             exp.Owner = this;
             exp.ShowInTaskbar = false;
             exp.ShowDialog();
-        }
-
-        private void codeedit_KeyUp( Object sender , KeyEventArgs e ) {
-            if ( e.Key == Key.Enter && this.CommandMode == true ) {
-                string v = this.codeedit.Text;
-                string[] line = v.Split( new string[] { "\n" , "\r\n" , "\r" } , StringSplitOptions.None );
-                if ( line.Length > 1 ) {
-                    string lst_line = line[line.Length - 2];
-                    if ( !string.IsNullOrWhiteSpace( lst_line ) ) {
-                        Workspace.Instance.Write( lst_line );
-                    }
-                }
-            }
         }
     }
 }

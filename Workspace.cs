@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace NodeMCU_Studio_2015
 {
@@ -48,6 +49,22 @@ namespace NodeMCU_Studio_2015
             }
         }
 
+        public void AttachTo( UIElement uielement ) {
+            uielement.GotFocus += this.OpenSerialPort;
+            uielement.LostFocus += this.CloseSerialPort;
+        }
+
+        private void OpenSerialPort( Object sender , RoutedEventArgs e ) {
+            if ( !this.serialport.IsOpen ) {
+                this.serialport.Open();
+            }
+        }
+
+        private void CloseSerialPort( Object sender , RoutedEventArgs e ) {
+            if ( this.serialport.IsOpen ) {
+                this.serialport.Close();
+            }
+        }
 
         public void Execute( LuaProject proj ) {
             try {
@@ -85,7 +102,7 @@ namespace NodeMCU_Studio_2015
             this.serialport.Parity = Parity.None;
             this.serialport.StopBits = StopBits.One;
             this.serialport.Encoding = Encoding.UTF8;
-            //this.serialport.NewLine = "\r\n";
+            this.serialport.NewLine = "\n";
             this.serialport.DataReceived += Serialport_DataReceived;
             this.serialport.Open();
             //Thread.Sleep( 1000 );
@@ -99,36 +116,90 @@ namespace NodeMCU_Studio_2015
             this.IsValid = true;
         }
 
-
-        public string Write( string cmd ) {
+        public byte[] Write( byte key , int cnt = 1 ) {
             this.serialport.DataReceived -= Serialport_DataReceived;
-            this.serialport.WriteLine( cmd );
-            StringBuilder builder = new StringBuilder();
-            char lst = 'a';
-            DateTime time = DateTime.Now;
-            DateTime time_end;
-            string txt_temp;
+            var keys = new byte[] { key };
+            this.serialport.Write( keys , 0 , keys.Length );
+            var data_to_read = new byte[cnt];
+            int count = 0;
             do {
-                builder.Append( this.serialport.ReadExisting() );
-                time_end = DateTime.Now;
-                if ( ( time_end.Subtract( time ).Seconds > 7 ) ) {
-                    throw new TimeoutException();
-                }
-                if ( builder.Length < cmd.Length ) {
-                    continue;
-                }
-                txt_temp = builder.ToString().Trim();
-                if ( txt_temp.Length == 0 ) {
-                    continue;
-                }
-                lst = txt_temp[txt_temp.Length - 1];
+                count += ( byte ) this.serialport.Read( data_to_read , count , cnt - count );
+            } while ( count < cnt );
+            this.serialport.DataReceived += Serialport_DataReceived;
+            return data_to_read;
+        }
 
-            } while ( lst != '>' );
-            var txt = builder.ToString();
-            if ( this.OnDataReceived != null ) {
-                this.OnDataReceived( this , new StringEventArgs( txt ) );
+        public void WriteLine() {
+            this.serialport.DataReceived -= Serialport_DataReceived;
+            this.serialport.Write( this.serialport.NewLine );
+            int cnt = 2;
+            var data_to_read = new byte[cnt];
+            int count = 0;
+            do {
+                count += ( byte ) this.serialport.Read( data_to_read , count , cnt - count );
+            } while ( count < cnt );
+            var datas = this.serialport.ReadExisting();
+            if ( !string.IsNullOrEmpty( datas ) ) {
+                if ( this.OnDataReceived != null ) {
+                    this.OnDataReceived( this , new StringEventArgs( datas ) );
+                }
             }
             this.serialport.DataReceived += Serialport_DataReceived;
+        }
+
+
+        public string Write( string cmd , bool appendline = true ) {
+            var txt = string.Empty;
+            if ( appendline ) {
+                this.serialport.DataReceived -= Serialport_DataReceived;
+                this.serialport.WriteLine( cmd );
+                StringBuilder builder = new StringBuilder();
+                char lst = 'a';
+                DateTime time = DateTime.Now;
+                DateTime time_end;
+                string txt_temp;
+                do {
+                    builder.Append( this.serialport.ReadExisting() );
+                    time_end = DateTime.Now;
+                    if ( ( time_end.Subtract( time ).Seconds > 7 ) ) {
+                        throw new TimeoutException();
+                    }
+                    if ( builder.Length < cmd.Length ) {
+                        continue;
+                    }
+                    txt_temp = builder.ToString();
+                    if ( txt_temp.Length < 2 ) {
+                        continue;
+                    }
+                    lst = txt_temp[txt_temp.Length - 2];
+
+                } while ( lst != '>' );
+                txt = builder.ToString();
+                if ( this.OnDataReceived != null ) {
+                    this.OnDataReceived( this , new StringEventArgs( txt ) );
+                }
+                this.serialport.DataReceived += Serialport_DataReceived;
+            } else {
+                this.serialport.DataReceived -= Serialport_DataReceived;
+                this.serialport.Write( cmd );
+                StringBuilder builder = new StringBuilder();
+                DateTime time = DateTime.Now;
+                DateTime time_end;
+                string txt_temp;
+                do {
+                    builder.Append( this.serialport.ReadExisting() );
+                    time_end = DateTime.Now;
+                    if ( ( time_end.Subtract( time ).Seconds > 7 ) ) {
+                        throw new TimeoutException();
+                    }
+                    txt_temp = builder.ToString().Trim();
+                    if ( txt_temp.Length == 0 ) {
+                        continue;
+                    }
+                } while ( builder.Length < cmd.Length );
+                txt = builder.ToString();
+                this.serialport.DataReceived += Serialport_DataReceived;
+            }
             return txt;
         }
 

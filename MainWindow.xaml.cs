@@ -31,8 +31,8 @@ namespace NodeMCU_Studio_2015
         }
 
         public static readonly DependencyProperty CommandModeProperty =
-            DependencyProperty.Register( nameof(CommandMode) , typeof(bool) , typeof(MainWindow) , new PropertyMetadata( false , OnChanged ) );
-
+            DependencyProperty.Register("CommandMode" , typeof(bool) , typeof(MainWindow) , new PropertyMetadata( false , OnChanged ) );
+        
         private static void OnChanged( DependencyObject d , DependencyPropertyChangedEventArgs e ) {
             var main = d as MainWindow;
             var command_mode = ( bool ) e.NewValue;
@@ -89,22 +89,30 @@ namespace NodeMCU_Studio_2015
             if ( e.RemovedItems.Count > 0 ) {
                 foreach ( var item in e.RemovedItems ) {
                     var proj = item as LuaProject;
-                    proj?.Save( this.codeedit.Text );
+                    if (proj != null) {
+                        proj.Save( this.codeedit.Text );
+                    }
                 }
             }
             var listbox = sender as ListBox;
-            var project = listbox?.SelectedItem as LuaProject;
-            this.codeedit.Text = project?.SourceCode;
-            this.output.Text = "";
+            if (listbox != null) {
+                var project = listbox.SelectedItem as LuaProject;
+                if (project != null) {
+                    this.codeedit.Text = project.SourceCode;
+                }
+                this.output.Text = "";
+            }
         }
 
         private void download_button_Click( Object sender , RoutedEventArgs e ) {
 
             var listbox = this.lua_programs_list;
-            var project = listbox?.SelectedItem as LuaProject;
-            if ( project != null ) {
-                project.Save( this.codeedit.Text );
-                Workspace.Instance.Write( project , () => { this.DoEvent(); } );
+            if (listbox != null) {
+                var project = listbox.SelectedItem as LuaProject;
+                if ( project != null ) {
+                    project.Save( this.codeedit.Text );
+                    Workspace.Instance.Write( project , () => { this.DoEvent(); } );
+                }
             }
         }
 
@@ -124,9 +132,11 @@ namespace NodeMCU_Studio_2015
 
         private void exe_button_Click( Object sender , RoutedEventArgs e ) {
             var listbox = this.lua_programs_list;
-            var project = listbox?.SelectedItem as LuaProject;
-            if ( project != null ) {
-                Workspace.Instance.Execute( project );
+            if (listbox != null) {
+                var project = listbox.SelectedItem as LuaProject;
+                if ( project != null ) {
+                    Workspace.Instance.Execute( project );
+                }
             }
         }
 

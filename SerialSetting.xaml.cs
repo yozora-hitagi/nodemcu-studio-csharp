@@ -42,13 +42,15 @@ namespace NodeMCU_Studio_2015
 
         private void ok_button_Click( Object sender , RoutedEventArgs e ) {
             var combox = this.serial_comboBox as ComboBox;
-            var item = combox?.SelectedItem as string;
-            if ( !string.IsNullOrWhiteSpace( item ) ) {
-                try {
-                    Workspace.Instance.Open( item );
-                    this.DialogResult = true;
-                } catch {
-                    MessageBox.Show( @"Can not open or validate the com port" , "error" , MessageBoxButton.OK , MessageBoxImage.Error );
+            if (combox != null) {
+                var item = combox.SelectedItem as string;
+                if ( !string.IsNullOrWhiteSpace( item ) ) {
+                    try {
+                        Workspace.Instance.Open( item );
+                        this.DialogResult = true;
+                    } catch {
+                        MessageBox.Show( @"Can not open or validate the com port" , "error" , MessageBoxButton.OK , MessageBoxImage.Error );
+                    }
                 }
             }
         }

@@ -83,7 +83,7 @@ namespace NodeMCU_Studio_2015
                 Thread.Sleep(100);
             }
             var str = result.ToString();
-            return str.Substring(command.Length+2, str.Length-4-2-command.Length); // Kill the echo, '\r\n' and '\r\n> '
+            return str.Substring(command.Length+2, str.Length-4-command.Length); // Kill the echo, '\r\n> '
         }
 
         public static SerialPort GetInstance()

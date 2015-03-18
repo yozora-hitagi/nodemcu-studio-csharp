@@ -169,6 +169,8 @@
     <None Include="Resources\console.png" />
     <None Include="Resources\upload.png" />
     <None Include="Resources\refresh.png" />
+    <None Include="Resources\common-icons.png" />
+    <None Include="Resources\misc-icons.png" />
     <Content Include="TabStrip.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

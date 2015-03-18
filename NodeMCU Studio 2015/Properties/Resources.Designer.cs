@@ -182,6 +182,16 @@ namespace NodeMCU_Studio_2015.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap common_icons {
+            get {
+                object obj = ResourceManager.GetObject("common_icons", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap console {
             get {
                 object obj = ResourceManager.GetObject("console", resourceCulture);
@@ -399,6 +409,16 @@ namespace NodeMCU_Studio_2015.Properties {
             get {
                 object obj = ResourceManager.GetObject("methods", resourceCulture);
                 return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap misc_icons {
+            get {
+                object obj = ResourceManager.GetObject("misc_icons", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
             }
         }
         

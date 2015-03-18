@@ -1,4 +1,5 @@
 ﻿using System.Threading;
+using System.Threading.Tasks;
 
 namespace NodeMCU_Studio_2015
 {
@@ -12,7 +13,7 @@ namespace NodeMCU_Studio_2015
             InitializeComponent();
             SynchronizationContext context = SynchronizationContext.Current;
 
-            new Thread(() => {
+            new Task(() => {
                 Thread.Sleep(3000);
 
                 context.Post(_ =>

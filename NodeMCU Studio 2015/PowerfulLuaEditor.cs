@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Forms;
 using FarsiLibrary.Win;
@@ -74,6 +75,8 @@ namespace NodeMCU_Studio_2015
                 _context.Post(_ =>
                 {
                     textBoxConsole.AppendText(s);
+                    textBoxConsole.SelectionStart = textBoxConsole.Text.Length;
+                    textBoxConsole.ScrollToCaret();
                 }, null);
             };
         }
@@ -328,6 +331,8 @@ namespace NodeMCU_Studio_2015
                         MessageBox.Show(e.ToString());
                     }
 
+                list.Sort(new ExplorerItemComparer());
+
                 BeginInvoke(
                     new Action(() =>
                         {
@@ -353,6 +358,13 @@ namespace NodeMCU_Studio_2015
             public ExplorerItemType Type;
             public string Title;
             public int Position;
+        }
+        class ExplorerItemComparer : IComparer<ExplorerItem>
+        {
+            public int Compare(ExplorerItem x, ExplorerItem y)
+            {
+                return x.Title.CompareTo(y.Title);
+            }
         }
 
         private void tsFiles_TabStripItemClosing(TabStripItemClosingEventArgs e)
@@ -1089,7 +1101,7 @@ namespace NodeMCU_Studio_2015
                 return;
             }
 
-            new Thread(() =>
+            new Task(() =>
             {
                 lock(SerialPort.GetInstance().Lock)
                 {
@@ -1109,6 +1121,7 @@ namespace NodeMCU_Studio_2015
                     }
                     
                 }
+                SerialPort.GetInstance().FireIsWorkingChanged(false);
             }).Start();
         }
 
@@ -1133,10 +1146,13 @@ namespace NodeMCU_Studio_2015
                 Text = Resources.please_choose_file_to_upload
             };
 
-            var files = new ComboBox
+            var files = new TextBox
             {
                 Left = 16,
-                Width = 240
+                Width = 240,
+                AutoCompleteSource = AutoCompleteSource.CustomSource,
+                AutoCompleteMode = AutoCompleteMode.Suggest,
+                AutoCompleteCustomSource = new AutoCompleteStringCollection()
             };
 
             var upload = new Button
@@ -1182,14 +1198,14 @@ namespace NodeMCU_Studio_2015
                             {
                                 return;
                             }
-                            _context.Post(_ => { files.DataSource = str.Split('\n'); }, null);
+                            _context.Post(_ => { files.AutoCompleteCustomSource.Clear(); files.AutoCompleteCustomSource.AddRange(str.Split('\n')); }, null);
                     })));
 
             upload.Click += (o, args) =>
             {
                 prompt.Close();
 
-                var s = files.SelectedItem;
+                var s = files.Text;
 
                 if (s == null)
                 {
@@ -1204,7 +1220,7 @@ namespace NodeMCU_Studio_2015
                         while (true)
                         {
                             var line = SerialPort.GetInstance().ExecuteWaitAndRead("print(file.readline())");
-                            if (line.Length == 0 || line.Equals("stdin:1: open a file first"))
+                            if (line.Length == 2 /* \r and \n */ || line.Equals("stdin:1: open a file first"))
                             {
                                 break;
                             }
@@ -1246,7 +1262,6 @@ namespace NodeMCU_Studio_2015
 
             DoSerialPortAction(() => ExecuteAndWait(command, () =>
             {
-                MessageBox.Show(Resources.execute_failed);
             }));
 
         }

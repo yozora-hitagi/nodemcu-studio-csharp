@@ -5,7 +5,7 @@ using SP = System.IO.Ports.SerialPort;
 
 namespace NodeMCU_Studio_2015
 {
-    class SerialPort
+    class SerialPort : IDisposable
     {
         private static SerialPort _instance;
         public readonly SP CurrentSp;
@@ -23,14 +23,25 @@ namespace NodeMCU_Studio_2015
             return SP.GetPortNames();
         }
 
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        private void Dispose(bool disposing)
+        {
+            if (disposing && CurrentSp != null)
+                CurrentSp.Dispose();
+        }
+
         public void Close()
         {
-            if (CurrentSp.IsOpen)
-            {
-                CurrentSp.Close();
-                if (IsOpenChanged != null) {
-                    IsOpenChanged.Invoke(CurrentSp.IsOpen);
-                }
+            if (!CurrentSp.IsOpen) return;
+
+            CurrentSp.Close();
+            if (IsOpenChanged != null) {
+                IsOpenChanged.Invoke(CurrentSp.IsOpen);
             }
         }
 

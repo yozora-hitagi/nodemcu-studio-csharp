@@ -75,8 +75,7 @@ namespace NodeMCU_Studio_2015
                 _context.Post(_ =>
                 {
                     textBoxConsole.AppendText(s);
-                    textBoxConsole.SelectionStart = textBoxConsole.Text.Length;
-                    textBoxConsole.ScrollToCaret();
+                    textBoxConsole.Navigate(textBoxConsole.Lines.Count - 1);
                 }, null);
             };
         }
@@ -183,8 +182,7 @@ namespace NodeMCU_Studio_2015
         private void BuildAutocompleteMenu(AutocompleteMenu popupMenu)
         {
             List<AutocompleteItem> items = _snippets.Select(item => new SnippetAutocompleteItem(item) {ImageIndex = 1}).Cast<AutocompleteItem>().ToList();
-            foreach (var item in _declarationSnippets)
-                items.Add(new DeclarationSnippet(item) { ImageIndex = 0 });
+            items.AddRange(_declarationSnippets.Select(item => new DeclarationSnippet(item) {ImageIndex = 0}));
             items.AddRange(_methods.Select(item => new MethodAutocompleteItem(item) {ImageIndex = 2}));
             items.AddRange(_keywords.Select(item => new AutocompleteItem(item)));
 
@@ -258,6 +256,9 @@ namespace NodeMCU_Studio_2015
                 ThreadPool.QueueUserWorkItem(
                     o=>ReBuildObjectExplorer(text)
                     );
+                ThreadPool.QueueUserWorkItem(
+                    o => ReFoldLines()
+                    );
             }
 
             //show invisible chars
@@ -272,6 +273,12 @@ namespace NodeMCU_Studio_2015
         }
 
         List<ExplorerItem> _explorerList = new List<ExplorerItem>();
+
+        private void ReFoldLines()
+        {
+            CurrentTb.Range.ClearFoldingMarkers();
+            CurrentTb.Range.SetFoldingMarkers("(function|repeat|if|else|elseif|for|while|do)", "end");
+        }
 
         private void ReBuildObjectExplorer(string text)
         {
@@ -342,11 +349,12 @@ namespace NodeMCU_Studio_2015
             public string Title;
             public int Position;
         }
+
         class ExplorerItemComparer : IComparer<ExplorerItem>
         {
             public int Compare(ExplorerItem x, ExplorerItem y)
             {
-                return x.Title.CompareTo(y.Title);
+                return String.Compare(x.Title, y.Title, StringComparison.Ordinal);
             }
         }
 
@@ -1213,7 +1221,7 @@ namespace NodeMCU_Studio_2015
                 }
 
                 DoSerialPortAction(
-                () => ExecuteAndWait(string.Format("file.open(\"{0}\", \"r\")", Utilities.Escape(s.ToString())), () =>
+                () => ExecuteAndWait(string.Format("file.open(\"{0}\", \"r\")", Utilities.Escape(s)), () =>
                     {
                         var builder = new StringBuilder();
                         while (true)
@@ -1249,7 +1257,7 @@ namespace NodeMCU_Studio_2015
 
             DoSerialPortAction(() => ExecuteAndWait(command, () =>
             {
-                _context.Post((_) =>
+                _context.Post(_ =>
                 {
                     textBoxCommand.Enabled = true;
                 }, null);

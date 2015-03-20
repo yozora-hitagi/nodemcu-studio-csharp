@@ -2,7 +2,7 @@
 
 namespace NodeMCU_Studio_2015
 {
-    class Utilities
+    static class Utilities
     {
         public static string Escape(string command)
         {

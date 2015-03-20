@@ -1,4 +1,6 @@
-﻿namespace NodeMCU_Studio_2015
+﻿using FastColoredTextBoxNS;
+
+namespace NodeMCU_Studio_2015
 {
     partial class PowerfulLuaEditor
     {
@@ -13,9 +15,14 @@
         /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
         protected override void Dispose(bool disposing)
         {
-            if (disposing && (components != null))
+            if (disposing)
             {
-                components.Dispose();
+                if (components != null)
+                    components.Dispose();
+                if (_invisibleCharsStyle != null)
+                    _invisibleCharsStyle.Dispose();
+                if (_sameWordsStyle != null)
+                    _sameWordsStyle.Dispose();
             }
             base.Dispose(disposing);
         }
@@ -122,7 +129,7 @@
             this.clName = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.ilAutocomplete = new System.Windows.Forms.ImageList(this.components);
             this.textBoxCommand = new System.Windows.Forms.TextBox();
-            this.textBoxConsole = new System.Windows.Forms.RichTextBox();
+            this.textBoxConsole = new FastColoredTextBoxNS.FastColoredTextBox();
             this.panel1 = new System.Windows.Forms.Panel();
             this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
             this.msMain.SuspendLayout();
@@ -131,6 +138,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.tsFiles)).BeginInit();
             this.cmMain.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvObjectExplorer)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.textBoxConsole)).BeginInit();
             this.panel1.SuspendLayout();
             this.tableLayoutPanel1.SuspendLayout();
             this.SuspendLayout();
@@ -981,12 +989,41 @@
             // 
             this.textBoxConsole.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.textBoxConsole.AutoCompleteBracketsList = new char[] {
+        '(',
+        ')',
+        '{',
+        '}',
+        '[',
+        ']',
+        '\"',
+        '\"',
+        '\'',
+        '\''};
+            this.textBoxConsole.AutoIndentCharsPatterns = "\r\n^\\s*[\\w\\.]+(\\s\\w+)?\\s*(?<range>=)\\s*(?<range>.+)\r\n";
+            this.textBoxConsole.AutoScrollMinSize = new System.Drawing.Size(43, 14);
+            this.textBoxConsole.BackBrush = null;
+            this.textBoxConsole.BracketsHighlightStrategy = FastColoredTextBoxNS.BracketsHighlightStrategy.Strategy2;
+            this.textBoxConsole.CharHeight = 14;
+            this.textBoxConsole.CharWidth = 8;
+            this.textBoxConsole.CommentPrefix = "--";
+            this.textBoxConsole.Cursor = System.Windows.Forms.Cursors.IBeam;
+            this.textBoxConsole.DisabledColor = System.Drawing.Color.FromArgb(((int)(((byte)(100)))), ((int)(((byte)(180)))), ((int)(((byte)(180)))), ((int)(((byte)(180)))));
+            this.textBoxConsole.IsReplaceMode = false;
+            this.textBoxConsole.Language = FastColoredTextBoxNS.Language.Lua;
+            this.textBoxConsole.LeftBracket = '(';
+            this.textBoxConsole.LeftBracket2 = '{';
             this.textBoxConsole.Location = new System.Drawing.Point(0, 0);
             this.textBoxConsole.Name = "textBoxConsole";
+            this.textBoxConsole.Paddings = new System.Windows.Forms.Padding(0);
             this.textBoxConsole.ReadOnly = true;
+            this.textBoxConsole.RightBracket = ')';
+            this.textBoxConsole.RightBracket2 = '}';
+            this.textBoxConsole.SelectionColor = System.Drawing.Color.FromArgb(((int)(((byte)(60)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(255)))));
             this.textBoxConsole.Size = new System.Drawing.Size(740, 149);
             this.textBoxConsole.TabIndex = 10;
-            this.textBoxConsole.Text = ">";
+            this.textBoxConsole.Text = "> ";
+            this.textBoxConsole.Zoom = 100;
             // 
             // panel1
             // 
@@ -1044,6 +1081,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.tsFiles)).EndInit();
             this.cmMain.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dgvObjectExplorer)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.textBoxConsole)).EndInit();
             this.panel1.ResumeLayout(false);
             this.tableLayoutPanel1.ResumeLayout(false);
             this.tableLayoutPanel1.PerformLayout();
@@ -1145,7 +1183,7 @@
         private System.Windows.Forms.ToolStripButton toolStripCloseButton;
         private System.Windows.Forms.ToolStripMenuItem closeSerialPortConnectionToolStripMenuItem;
         private System.Windows.Forms.TextBox textBoxCommand;
-        private System.Windows.Forms.RichTextBox textBoxConsole;
+        private FastColoredTextBoxNS.FastColoredTextBox textBoxConsole;
         private System.Windows.Forms.Panel panel1;
         private System.Windows.Forms.TableLayoutPanel tableLayoutPanel1;
         private System.Windows.Forms.ToolStripButton toolStripUploadButton;

@@ -1033,8 +1033,8 @@ namespace NodeMCU_Studio_2015
             var filename = Path.GetFileName(tsFiles.SelectedItem.Tag as string);
 
             DoSerialPortAction(
-                () => ExecuteAndWait(string.Format("file.remove(\"{0}\")", Utilities.Escape(filename)), () =>
-                    ExecuteAndWait(string.Format("file.open(\"{0}\", \"w+\")", Utilities.Escape(filename)), () =>
+                () => ExecuteWaitAndRead(string.Format("file.remove(\"{0}\")", Utilities.Escape(filename)), _ =>
+                    ExecuteWaitAndRead(string.Format("file.open(\"{0}\", \"w+\")", Utilities.Escape(filename)), __ =>
                     {
                         if (
                             CurrentTb.Text.Split('\n')
@@ -1053,7 +1053,7 @@ namespace NodeMCU_Studio_2015
                                 ? Resources.download_to_device_failed
                                 : Resources.download_to_device_succeeded);
                         }
-                    })));
+                    })), () => { });
         }
 
         private void RefreshSerialPort()
@@ -1086,10 +1086,10 @@ namespace NodeMCU_Studio_2015
             var filename = Path.GetFileName(tsFiles.SelectedItem.Tag as string);
 
             DoSerialPortAction(
-                () => ExecuteAndWait(string.Format("dofile(\"{0}\")", Utilities.Escape(filename)), () =>
+                () => ExecuteWaitAndRead(string.Format("dofile(\"{0}\")", Utilities.Escape(filename)), _ =>
                     {
                         MessageBox.Show(Resources.execute_succeeded);
-                    }));
+                    }), () => { });
         }
 
         private void toolStripCloseButton_Click(object sender, EventArgs e)
@@ -1097,26 +1097,29 @@ namespace NodeMCU_Studio_2015
             SerialPort.GetInstance().Close();
         }
 
-        private void DoSerialPortAction(Action callback)
+        private void DoSerialPortAction(Action callback, Action cleanup)
         {
             var index = toolStripComboBoxSerialPort.SelectedIndex;
             if (index < 0)
             {
                 MessageBox.Show(Resources.no_serial_port_selected);
+                cleanup();
                 return;
             }
 
             if (toolStripComboBoxSerialPort.ComboBox != null)
             {
                 var ports = toolStripComboBoxSerialPort.ComboBox.DataSource as string[];
-                if (ports == null || (!SerialPort.GetInstance().CurrentSp.IsOpen && !SerialPort.GetInstance().Open(ports[index])))
+                if (ports == null ||
+                    (!SerialPort.GetInstance().CurrentSp.IsOpen && !SerialPort.GetInstance().Open(ports[index])))
                 {
                     MessageBox.Show(Resources.cannot_connect_to_device);
+                    cleanup();
                     return;
                 }
             }
 
-            new Task(() =>
+            Task task = new Task(() =>
             {
                 lock(SerialPort.GetInstance().Lock)
                 {
@@ -1137,18 +1140,21 @@ namespace NodeMCU_Studio_2015
                     
                 }
                 SerialPort.GetInstance().FireIsWorkingChanged(false);
-            }).Start();
+            });
+
+            task.ContinueWith(_ => cleanup() , TaskScheduler.FromCurrentSynchronizationContext());
+            task.Start();
         }
 
-        private static void ExecuteAndWait(string command, Action callback)
+        private static void ExecuteWaitAndRead(string command, Action<string> callback)
         {
-            if (!SerialPort.GetInstance()
-                        .ExecuteAndWait(command))
+            var line = SerialPort.GetInstance().ExecuteWaitAndRead(command);
+            if (line.Length == 2 /* \r and \n */ || line.Equals("stdin:1: open a file first"))
             {
                 MessageBox.Show(Resources.operation_failed);
                 throw new IgnoreMeException();
             }
-            callback();
+            callback(line);
         }
 
         private void toolStripUploadButton_Click(object sender, EventArgs e)
@@ -1204,17 +1210,14 @@ namespace NodeMCU_Studio_2015
                 Icon = Resources.nodemcu
             };
 
+            string result = "";
+
             DoSerialPortAction(
-                () => ExecuteAndWait("for k, v in pairs(file.list()) do", () =>
-                    ExecuteAndWait("print(k)", () =>
+                () => ExecuteWaitAndRead("for k, v in pairs(file.list()) do", _ =>
+                    ExecuteWaitAndRead("print(k)", __ => ExecuteWaitAndRead("end", str =>
                     {
-                            var str = SerialPort.GetInstance().ExecuteWaitAndRead("end");
-                            if (str.Length == 0)
-                            {
-                                return;
-                            }
-                            _context.Post(_ => { files.AutoCompleteCustomSource.Clear(); files.AutoCompleteCustomSource.AddRange(str.Split('\n')); }, null);
-                    })));
+                        result = str;
+                    }))), () => { files.AutoCompleteCustomSource.Clear(); files.AutoCompleteCustomSource.AddRange(result.Split('\n')); });
 
             upload.Click += (o, args) =>
             {
@@ -1228,29 +1231,36 @@ namespace NodeMCU_Studio_2015
                     return;
                 }
 
+                string res = "";
+
                 DoSerialPortAction(
-                () => ExecuteAndWait(string.Format("file.open(\"{0}\", \"r\")", Utilities.Escape(s)), () =>
+                () => ExecuteWaitAndRead(string.Format("file.open(\"{0}\", \"r\")", Utilities.Escape(s)), _ =>
                     {
                         var builder = new StringBuilder();
                         while (true)
                         {
-                            var line = SerialPort.GetInstance().ExecuteWaitAndRead("print(file.readline())");
-                            if (line.Length == 2 /* \r and \n */ || line.Equals("stdin:1: open a file first"))
+                            try
                             {
+                                ExecuteWaitAndRead("print(file.readline())", line =>
+                                {
+                                    builder.Append(line);
+                                });
+                            }
+                            catch (IgnoreMeException exception)
+                            {
+                                // ignore
                                 break;
                             }
-                            builder.Append(line);
                         }
-
+                        res = builder.ToString();
                         SerialPort.GetInstance()
                             .ExecuteAndWait("file.close()");
 
-                        _context.Post(_ =>
-                        {
-                            CreateTab(null);
-                            CurrentTb.InsertText(builder.ToString());
-                        }, null);
-                    }));
+                    }), () =>
+                    {
+                        CreateTab(null);
+                        CurrentTb.InsertText(res);
+                    });
             };
 
             prompt.ShowDialog();
@@ -1263,13 +1273,13 @@ namespace NodeMCU_Studio_2015
             textBoxCommand.Text = "";
             textBoxCommand.Enabled = false;
 
-            DoSerialPortAction(() => ExecuteAndWait(command, () =>
+            DoSerialPortAction(() => ExecuteWaitAndRead(command, _ =>
             {
-                _context.Post(_ =>
-                {
-                    textBoxCommand.Enabled = true;
-                }, null);
-            }));
+            }), () =>
+            {
+                textBoxCommand.Enabled = true;
+            } 
+        );
 
         }
 

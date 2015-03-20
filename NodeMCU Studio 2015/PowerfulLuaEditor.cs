@@ -78,6 +78,10 @@ namespace NodeMCU_Studio_2015
                     textBoxConsole.Navigate(textBoxConsole.Lines.Count - 1);
                 }, null);
             };
+
+            textBoxCommand.AutoCompleteSource = AutoCompleteSource.CustomSource;
+            textBoxCommand.AutoCompleteCustomSource = new AutoCompleteStringCollection();
+            _methods.ForEach(str => textBoxCommand.AutoCompleteCustomSource.Add(str));
         }
 
         private void PowerfulLuaEditor_IsOpenChanged(bool isOpen)
@@ -487,26 +491,26 @@ namespace NodeMCU_Studio_2015
         private void UpdateInterfaceHasFiles()
         {
             var tb = CurrentTb;
-            undoStripButton.Enabled = undoToolStripMenuItem.Enabled = tb.UndoEnabled;
-            redoStripButton.Enabled = redoToolStripMenuItem.Enabled = tb.RedoEnabled;
+            undoStripButton.Enabled = undoToolStripMenuItem.Enabled = undoToolStripMenuItem1.Enabled = tb.UndoEnabled;
+            redoStripButton.Enabled = redoToolStripMenuItem.Enabled = redoToolStripMenuItem1.Enabled = tb.RedoEnabled;
             saveToolStripButton.Enabled = saveToolStripMenuItem.Enabled = tb.IsChanged;
             saveAsToolStripMenuItem.Enabled = true;
-            pasteToolStripButton.Enabled = pasteToolStripMenuItem.Enabled = true;
-            cutToolStripButton.Enabled = cutToolStripMenuItem.Enabled =
-            copyToolStripButton.Enabled = copyToolStripMenuItem.Enabled = !tb.Selection.IsEmpty;
+            pasteToolStripButton.Enabled = pasteToolStripMenuItem.Enabled = pasteToolStripMenuItem1.Enabled = true;
+            cutToolStripButton.Enabled = cutToolStripMenuItem.Enabled = cutToolStripMenuItem1.Enabled = 
+            copyToolStripButton.Enabled = copyToolStripMenuItem.Enabled = copyToolStripMenuItem1.Enabled = !tb.Selection.IsEmpty;
             printToolStripButton.Enabled = true;
         }
 
         private void UpdateInterfaceNoFiles()
         {
+            undoStripButton.Enabled = undoToolStripMenuItem.Enabled = undoToolStripMenuItem1.Enabled = false;
+            redoStripButton.Enabled = redoToolStripMenuItem.Enabled = redoToolStripMenuItem1.Enabled = false;
             saveToolStripButton.Enabled = saveToolStripMenuItem.Enabled = false;
             saveAsToolStripMenuItem.Enabled = false;
-            cutToolStripButton.Enabled = cutToolStripMenuItem.Enabled =
-            copyToolStripButton.Enabled = copyToolStripMenuItem.Enabled = false;
-            pasteToolStripButton.Enabled = pasteToolStripMenuItem.Enabled = false;
+            pasteToolStripButton.Enabled = pasteToolStripMenuItem.Enabled = pasteToolStripMenuItem1.Enabled = false;
+            cutToolStripButton.Enabled = cutToolStripMenuItem.Enabled = cutToolStripMenuItem1.Enabled =
+            copyToolStripButton.Enabled = copyToolStripMenuItem.Enabled = copyToolStripMenuItem1.Enabled = false;
             printToolStripButton.Enabled = false;
-            undoStripButton.Enabled = undoToolStripMenuItem.Enabled = false;
-            redoStripButton.Enabled = redoToolStripMenuItem.Enabled = false;
             dgvObjectExplorer.RowCount = 0;
         }
 
@@ -646,6 +650,10 @@ namespace NodeMCU_Studio_2015
                 ThreadPool.QueueUserWorkItem(
                     o => ReBuildObjectExplorer(text)
                 );
+                ThreadPool.QueueUserWorkItem(
+                    o => ReFoldLines()
+                );
+                CurrentTb.Invalidate();
             }
         }
 
@@ -990,7 +998,7 @@ namespace NodeMCU_Studio_2015
                 if (fastColoredTextBox != null)
                     fastColoredTextBox.ShowFoldingLines = btShowFoldingLines.Checked;
             }
-            CurrentTb.Invalidate();
+            if (CurrentTb != null) CurrentTb.Invalidate();
         }
 
         private void Zoom_click(object sender, EventArgs e)

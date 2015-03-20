@@ -171,6 +171,19 @@
     <None Include="Resources\refresh.png" />
     <None Include="Resources\common-icons.png" />
     <None Include="Resources\misc-icons.png" />
+    <None Include="Resources\Savefile.png" />
+    <None Include="Resources\SN1.png" />
+    <None Include="Resources\SN1_LEFT.png" />
+    <None Include="Resources\SN1_RIGHT.png" />
+    <None Include="Resources\Undo.png" />
+    <None Include="Resources\Copy.png" />
+    <None Include="Resources\Cut.png" />
+    <None Include="Resources\Fould.png" />
+    <None Include="Resources\HL.png" />
+    <None Include="Resources\Newfile.png" />
+    <None Include="Resources\Openfile.png" />
+    <None Include="Resources\Paste.png" />
+    <None Include="Resources\Redo.png" />
     <Content Include="TabStrip.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -171,7 +171,7 @@ namespace NodeMCU_Studio_2015
             // 
             // newToolStripMenuItem
             // 
-            this.newToolStripMenuItem.Image = global::NodeMCU_Studio_2015.Properties.Resources.newToolStripButton_Image;
+            this.newToolStripMenuItem.Image = global::NodeMCU_Studio_2015.Properties.Resources.Newfile;
             this.newToolStripMenuItem.Name = "newToolStripMenuItem";
             this.newToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.N)));
             this.newToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
@@ -180,7 +180,7 @@ namespace NodeMCU_Studio_2015
             // 
             // openToolStripMenuItem
             // 
-            this.openToolStripMenuItem.Image = global::NodeMCU_Studio_2015.Properties.Resources.openToolStripButton_Image;
+            this.openToolStripMenuItem.Image = global::NodeMCU_Studio_2015.Properties.Resources.Openfile;
             this.openToolStripMenuItem.Name = "openToolStripMenuItem";
             this.openToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.O)));
             this.openToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
@@ -189,7 +189,7 @@ namespace NodeMCU_Studio_2015
             // 
             // saveToolStripMenuItem
             // 
-            this.saveToolStripMenuItem.Image = global::NodeMCU_Studio_2015.Properties.Resources.saveToolStripButton_Image;
+            this.saveToolStripMenuItem.Image = global::NodeMCU_Studio_2015.Properties.Resources.Savefile;
             this.saveToolStripMenuItem.Name = "saveToolStripMenuItem";
             this.saveToolStripMenuItem.ShortcutKeyDisplayString = "";
             this.saveToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.S)));
@@ -231,7 +231,7 @@ namespace NodeMCU_Studio_2015
             // 
             // cutToolStripMenuItem1
             // 
-            this.cutToolStripMenuItem1.Image = global::NodeMCU_Studio_2015.Properties.Resources.cutToolStripButton_Image;
+            this.cutToolStripMenuItem1.Image = global::NodeMCU_Studio_2015.Properties.Resources.Cut;
             this.cutToolStripMenuItem1.Name = "cutToolStripMenuItem1";
             this.cutToolStripMenuItem1.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.X)));
             this.cutToolStripMenuItem1.Size = new System.Drawing.Size(152, 22);
@@ -240,7 +240,7 @@ namespace NodeMCU_Studio_2015
             // 
             // copyToolStripMenuItem1
             // 
-            this.copyToolStripMenuItem1.Image = global::NodeMCU_Studio_2015.Properties.Resources.copyToolStripButton_Image;
+            this.copyToolStripMenuItem1.Image = global::NodeMCU_Studio_2015.Properties.Resources.Copy;
             this.copyToolStripMenuItem1.Name = "copyToolStripMenuItem1";
             this.copyToolStripMenuItem1.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.C)));
             this.copyToolStripMenuItem1.Size = new System.Drawing.Size(152, 22);
@@ -249,7 +249,7 @@ namespace NodeMCU_Studio_2015
             // 
             // pasteToolStripMenuItem1
             // 
-            this.pasteToolStripMenuItem1.Image = global::NodeMCU_Studio_2015.Properties.Resources.pasteToolStripButton_Image;
+            this.pasteToolStripMenuItem1.Image = global::NodeMCU_Studio_2015.Properties.Resources.Paste;
             this.pasteToolStripMenuItem1.Name = "pasteToolStripMenuItem1";
             this.pasteToolStripMenuItem1.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.V)));
             this.pasteToolStripMenuItem1.Size = new System.Drawing.Size(152, 22);
@@ -258,7 +258,7 @@ namespace NodeMCU_Studio_2015
             // 
             // undoToolStripMenuItem1
             // 
-            this.undoToolStripMenuItem1.Image = global::NodeMCU_Studio_2015.Properties.Resources.undo_16x16;
+            this.undoToolStripMenuItem1.Image = global::NodeMCU_Studio_2015.Properties.Resources.Undo;
             this.undoToolStripMenuItem1.Name = "undoToolStripMenuItem1";
             this.undoToolStripMenuItem1.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Z)));
             this.undoToolStripMenuItem1.Size = new System.Drawing.Size(152, 22);
@@ -267,7 +267,7 @@ namespace NodeMCU_Studio_2015
             // 
             // redoToolStripMenuItem1
             // 
-            this.redoToolStripMenuItem1.Image = global::NodeMCU_Studio_2015.Properties.Resources.redo_16x16;
+            this.redoToolStripMenuItem1.Image = global::NodeMCU_Studio_2015.Properties.Resources.Redo;
             this.redoToolStripMenuItem1.Name = "redoToolStripMenuItem1";
             this.redoToolStripMenuItem1.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Y)));
             this.redoToolStripMenuItem1.Size = new System.Drawing.Size(152, 22);
@@ -295,7 +295,7 @@ namespace NodeMCU_Studio_2015
             // highlightCurrentLineToolStripMenuItem
             // 
             this.highlightCurrentLineToolStripMenuItem.CheckOnClick = true;
-            this.highlightCurrentLineToolStripMenuItem.Image = global::NodeMCU_Studio_2015.Properties.Resources.edit_padding_top;
+            this.highlightCurrentLineToolStripMenuItem.Image = global::NodeMCU_Studio_2015.Properties.Resources.HL;
             this.highlightCurrentLineToolStripMenuItem.Name = "highlightCurrentLineToolStripMenuItem";
             this.highlightCurrentLineToolStripMenuItem.Size = new System.Drawing.Size(202, 22);
             this.highlightCurrentLineToolStripMenuItem.Text = "Highlight Current Line";
@@ -306,7 +306,7 @@ namespace NodeMCU_Studio_2015
             this.showFoldingLineToolStripMenuItem.Checked = true;
             this.showFoldingLineToolStripMenuItem.CheckOnClick = true;
             this.showFoldingLineToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.showFoldingLineToolStripMenuItem.Image = global::NodeMCU_Studio_2015.Properties.Resources.btShowFoldingLines_Image;
+            this.showFoldingLineToolStripMenuItem.Image = global::NodeMCU_Studio_2015.Properties.Resources.Fould;
             this.showFoldingLineToolStripMenuItem.Name = "showFoldingLineToolStripMenuItem";
             this.showFoldingLineToolStripMenuItem.Size = new System.Drawing.Size(202, 22);
             this.showFoldingLineToolStripMenuItem.Text = "Show Folding Lines";
@@ -475,7 +475,7 @@ namespace NodeMCU_Studio_2015
             // newToolStripButton
             // 
             this.newToolStripButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.newToolStripButton.Image = global::NodeMCU_Studio_2015.Properties.Resources.newToolStripButton_Image;
+            this.newToolStripButton.Image = global::NodeMCU_Studio_2015.Properties.Resources.Newfile;
             this.newToolStripButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.newToolStripButton.Name = "newToolStripButton";
             this.newToolStripButton.Size = new System.Drawing.Size(23, 22);
@@ -485,7 +485,7 @@ namespace NodeMCU_Studio_2015
             // openToolStripButton
             // 
             this.openToolStripButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.openToolStripButton.Image = ((System.Drawing.Image)(resources.GetObject("openToolStripButton.Image")));
+            this.openToolStripButton.Image = global::NodeMCU_Studio_2015.Properties.Resources.Openfile;
             this.openToolStripButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.openToolStripButton.Name = "openToolStripButton";
             this.openToolStripButton.Size = new System.Drawing.Size(23, 22);
@@ -495,7 +495,7 @@ namespace NodeMCU_Studio_2015
             // saveToolStripButton
             // 
             this.saveToolStripButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.saveToolStripButton.Image = ((System.Drawing.Image)(resources.GetObject("saveToolStripButton.Image")));
+            this.saveToolStripButton.Image = global::NodeMCU_Studio_2015.Properties.Resources.Savefile;
             this.saveToolStripButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.saveToolStripButton.Name = "saveToolStripButton";
             this.saveToolStripButton.Size = new System.Drawing.Size(23, 22);
@@ -520,7 +520,7 @@ namespace NodeMCU_Studio_2015
             // cutToolStripButton
             // 
             this.cutToolStripButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.cutToolStripButton.Image = ((System.Drawing.Image)(resources.GetObject("cutToolStripButton.Image")));
+            this.cutToolStripButton.Image = global::NodeMCU_Studio_2015.Properties.Resources.Cut;
             this.cutToolStripButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.cutToolStripButton.Name = "cutToolStripButton";
             this.cutToolStripButton.Size = new System.Drawing.Size(23, 22);
@@ -530,7 +530,7 @@ namespace NodeMCU_Studio_2015
             // copyToolStripButton
             // 
             this.copyToolStripButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.copyToolStripButton.Image = ((System.Drawing.Image)(resources.GetObject("copyToolStripButton.Image")));
+            this.copyToolStripButton.Image = global::NodeMCU_Studio_2015.Properties.Resources.Copy;
             this.copyToolStripButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.copyToolStripButton.Name = "copyToolStripButton";
             this.copyToolStripButton.Size = new System.Drawing.Size(23, 22);
@@ -540,7 +540,7 @@ namespace NodeMCU_Studio_2015
             // pasteToolStripButton
             // 
             this.pasteToolStripButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.pasteToolStripButton.Image = ((System.Drawing.Image)(resources.GetObject("pasteToolStripButton.Image")));
+            this.pasteToolStripButton.Image = global::NodeMCU_Studio_2015.Properties.Resources.Paste;
             this.pasteToolStripButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.pasteToolStripButton.Name = "pasteToolStripButton";
             this.pasteToolStripButton.Size = new System.Drawing.Size(23, 22);
@@ -562,7 +562,7 @@ namespace NodeMCU_Studio_2015
             // 
             this.btHighlightCurrentLine.CheckOnClick = true;
             this.btHighlightCurrentLine.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.btHighlightCurrentLine.Image = global::NodeMCU_Studio_2015.Properties.Resources.edit_padding_top;
+            this.btHighlightCurrentLine.Image = global::NodeMCU_Studio_2015.Properties.Resources.HL;
             this.btHighlightCurrentLine.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.btHighlightCurrentLine.Name = "btHighlightCurrentLine";
             this.btHighlightCurrentLine.Size = new System.Drawing.Size(23, 22);
@@ -576,7 +576,7 @@ namespace NodeMCU_Studio_2015
             this.btShowFoldingLines.CheckOnClick = true;
             this.btShowFoldingLines.CheckState = System.Windows.Forms.CheckState.Checked;
             this.btShowFoldingLines.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.btShowFoldingLines.Image = ((System.Drawing.Image)(resources.GetObject("btShowFoldingLines.Image")));
+            this.btShowFoldingLines.Image = global::NodeMCU_Studio_2015.Properties.Resources.Fould;
             this.btShowFoldingLines.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.btShowFoldingLines.Name = "btShowFoldingLines";
             this.btShowFoldingLines.Size = new System.Drawing.Size(23, 22);
@@ -591,7 +591,7 @@ namespace NodeMCU_Studio_2015
             // undoStripButton
             // 
             this.undoStripButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.undoStripButton.Image = global::NodeMCU_Studio_2015.Properties.Resources.undo_16x16;
+            this.undoStripButton.Image = global::NodeMCU_Studio_2015.Properties.Resources.Undo;
             this.undoStripButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.undoStripButton.Name = "undoStripButton";
             this.undoStripButton.Size = new System.Drawing.Size(23, 22);
@@ -601,7 +601,7 @@ namespace NodeMCU_Studio_2015
             // redoStripButton
             // 
             this.redoStripButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.redoStripButton.Image = global::NodeMCU_Studio_2015.Properties.Resources.redo_16x16;
+            this.redoStripButton.Image = global::NodeMCU_Studio_2015.Properties.Resources.Redo;
             this.redoStripButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.redoStripButton.Name = "redoStripButton";
             this.redoStripButton.Size = new System.Drawing.Size(23, 22);
@@ -616,7 +616,7 @@ namespace NodeMCU_Studio_2015
             // backStripButton
             // 
             this.backStripButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.backStripButton.Image = global::NodeMCU_Studio_2015.Properties.Resources.backward0_16x16;
+            this.backStripButton.Image = global::NodeMCU_Studio_2015.Properties.Resources.SN1_LEFT;
             this.backStripButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.backStripButton.Name = "backStripButton";
             this.backStripButton.Size = new System.Drawing.Size(23, 22);
@@ -626,7 +626,7 @@ namespace NodeMCU_Studio_2015
             // forwardStripButton
             // 
             this.forwardStripButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.forwardStripButton.Image = global::NodeMCU_Studio_2015.Properties.Resources.forward_16x16;
+            this.forwardStripButton.Image = global::NodeMCU_Studio_2015.Properties.Resources.SN1_RIGHT;
             this.forwardStripButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.forwardStripButton.Name = "forwardStripButton";
             this.forwardStripButton.Size = new System.Drawing.Size(23, 22);
@@ -809,6 +809,7 @@ namespace NodeMCU_Studio_2015
             // 
             // cutToolStripMenuItem
             // 
+            this.cutToolStripMenuItem.Image = global::NodeMCU_Studio_2015.Properties.Resources.Cut;
             this.cutToolStripMenuItem.Name = "cutToolStripMenuItem";
             this.cutToolStripMenuItem.Size = new System.Drawing.Size(231, 22);
             this.cutToolStripMenuItem.Text = "Cut";
@@ -816,6 +817,7 @@ namespace NodeMCU_Studio_2015
             // 
             // copyToolStripMenuItem
             // 
+            this.copyToolStripMenuItem.Image = global::NodeMCU_Studio_2015.Properties.Resources.Copy;
             this.copyToolStripMenuItem.Name = "copyToolStripMenuItem";
             this.copyToolStripMenuItem.Size = new System.Drawing.Size(231, 22);
             this.copyToolStripMenuItem.Text = "Copy";
@@ -823,6 +825,7 @@ namespace NodeMCU_Studio_2015
             // 
             // pasteToolStripMenuItem
             // 
+            this.pasteToolStripMenuItem.Image = global::NodeMCU_Studio_2015.Properties.Resources.Paste;
             this.pasteToolStripMenuItem.Name = "pasteToolStripMenuItem";
             this.pasteToolStripMenuItem.Size = new System.Drawing.Size(231, 22);
             this.pasteToolStripMenuItem.Text = "Paste";
@@ -842,7 +845,7 @@ namespace NodeMCU_Studio_2015
             // 
             // undoToolStripMenuItem
             // 
-            this.undoToolStripMenuItem.Image = global::NodeMCU_Studio_2015.Properties.Resources.undo_16x16;
+            this.undoToolStripMenuItem.Image = global::NodeMCU_Studio_2015.Properties.Resources.Undo;
             this.undoToolStripMenuItem.Name = "undoToolStripMenuItem";
             this.undoToolStripMenuItem.Size = new System.Drawing.Size(231, 22);
             this.undoToolStripMenuItem.Text = "Undo";
@@ -850,7 +853,7 @@ namespace NodeMCU_Studio_2015
             // 
             // redoToolStripMenuItem
             // 
-            this.redoToolStripMenuItem.Image = global::NodeMCU_Studio_2015.Properties.Resources.redo_16x16;
+            this.redoToolStripMenuItem.Image = global::NodeMCU_Studio_2015.Properties.Resources.Redo;
             this.redoToolStripMenuItem.Name = "redoToolStripMenuItem";
             this.redoToolStripMenuItem.Size = new System.Drawing.Size(231, 22);
             this.redoToolStripMenuItem.Text = "Redo";

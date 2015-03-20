@@ -1034,6 +1034,7 @@
             this.Text = "NodeMCU Studio 2015";
             this.WindowState = System.Windows.Forms.FormWindowState.Maximized;
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.PowerfulLuaEditor_FormClosing);
+            this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.OnKeyDown);
             this.msMain.ResumeLayout(false);
             this.msMain.PerformLayout();
             this.ssMain.ResumeLayout(false);

@@ -6,25 +6,49 @@ namespace NodeMCU_Studio_2015
     {
         public static string Escape(string command)
         {
-            const char backSlash = '\\';
-            const char slash = '/';
-            const char doubleQuote = '"';
-
             var output = new StringBuilder(command.Length);
             foreach (var c in command)
             {
                 switch (c)
                 {
-                    case backSlash:
-                        output.AppendFormat("{0}{0}", backSlash);
+                    case '\a':
+                        output.AppendFormat("{0}{1}", '\\', 'a');
                         break;
 
-                    case slash:
-                        output.AppendFormat("{0}{1}", backSlash, slash);
+                    case '\b':
+                        output.AppendFormat("{0}{1}", '\\', 'b');
                         break;
 
-                    case doubleQuote:
-                        output.AppendFormat("{0}{1}", backSlash, doubleQuote);
+                    case '\f':
+                        output.AppendFormat("{0}{1}", '\\', 'f');
+                        break;
+
+                    case '\n':
+                        output.AppendFormat("{0}{1}", '\\', 'n');
+                        break;
+
+                    case '\r':
+                        output.AppendFormat("{0}{1}", '\\', 'r');
+                        break;
+
+                    case '\t':
+                        output.AppendFormat("{0}{1}", '\\', 't');
+                        break;
+
+                    case '\v':
+                        output.AppendFormat("{0}{1}", '\\', 'v');
+                        break;
+
+                    case '\'':
+                        output.AppendFormat("{0}{1}", '\\', '\'');
+                        break;
+
+                    case '\"':
+                        output.AppendFormat("{0}{1}", '\\', '\"');
+                        break;
+
+                    case '\\':
+                        output.AppendFormat("{0}{1}", '\\', '\\');
                         break;
 
                     default:

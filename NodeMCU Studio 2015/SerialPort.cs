@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using SP = System.IO.Ports.SerialPort;
 
@@ -63,24 +64,23 @@ namespace NodeMCU_Studio_2015
             return CurrentSp.IsOpen;
         }
 
+        private readonly Regex _end = new Regex("\n>+ $");
+
         public bool ExecuteAndWait(string command)
         {
-            CurrentSp.WriteLine(command);
-            for (var i = 0;i < MaxRetries;i++)
+            var str = ExecuteWaitAndRead(command);
+            if (str.Length == 2 /* \r and \n */|| str.Equals("stdin:1: open a file first\r\n"))
             {
-                var s = CurrentSp.ReadExisting();
-                if (OnDataReceived != null) OnDataReceived(s);
-                if (s.Contains(">"))
-                {
-                    return true;
-                }
-                Thread.Sleep(50);
+                return false;
             }
-            return false;
+            return true;
         }
 
         public string ExecuteWaitAndRead(string command)
         {
+            var early = CurrentSp.ReadExisting();
+            if (OnDataReceived != null) OnDataReceived.Invoke(early);
+
             var result = new StringBuilder();
 
             CurrentSp.WriteLine(command);
@@ -89,7 +89,8 @@ namespace NodeMCU_Studio_2015
                 var s = CurrentSp.ReadExisting();
                 result.Append(s);
                 if (OnDataReceived != null) OnDataReceived.Invoke(s);
-                if (result.ToString().EndsWith("\n> "))
+                if (_end.IsMatch(
+                    result.ToString()))
                 {
                     break;
                 }

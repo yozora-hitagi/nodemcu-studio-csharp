@@ -1097,6 +1097,11 @@ namespace NodeMCU_Studio_2015
             SerialPort.GetInstance().Close();
         }
 
+        private void DoSerialPortAction(Action callback)
+        {
+            DoSerialPortAction(callback, () => { });
+        }
+
         private void DoSerialPortAction(Action callback, Action cleanup)
         {
             var index = toolStripComboBoxSerialPort.SelectedIndex;
@@ -1149,12 +1154,17 @@ namespace NodeMCU_Studio_2015
         private static void ExecuteWaitAndRead(string command, Action<string> callback)
         {
             var line = SerialPort.GetInstance().ExecuteWaitAndRead(command);
-            if (line.Length == 2 /* \r and \n */ || line.Equals("stdin:1: open a file first"))
+            if (line.Length == 2 /* \r and \n */ || line.Equals("stdin:1: open a file first\r\n"))
             {
                 MessageBox.Show(Resources.operation_failed);
                 throw new IgnoreMeException();
             }
             callback(line);
+        }
+
+        private static void ExecuteWaitAndRead(string command)
+        {
+            ExecuteWaitAndRead(command, _ => { });
         }
 
         private void toolStripUploadButton_Click(object sender, EventArgs e)
@@ -1210,7 +1220,7 @@ namespace NodeMCU_Studio_2015
                 Icon = Resources.nodemcu
             };
 
-            string result = "";
+            var result = "";
 
             DoSerialPortAction(
                 () => ExecuteWaitAndRead("for k, v in pairs(file.list()) do", _ =>
@@ -1246,7 +1256,7 @@ namespace NodeMCU_Studio_2015
                                     builder.Append(line);
                                 });
                             }
-                            catch (IgnoreMeException exception)
+                            catch (IgnoreMeException)
                             {
                                 // ignore
                                 break;
@@ -1271,16 +1281,8 @@ namespace NodeMCU_Studio_2015
             if (e.KeyChar != (char)Keys.Return) return;
             var command = textBoxCommand.Text;
             textBoxCommand.Text = "";
-            textBoxCommand.Enabled = false;
 
-            DoSerialPortAction(() => ExecuteWaitAndRead(command, _ =>
-            {
-            }), () =>
-            {
-                textBoxCommand.Enabled = true;
-            } 
-        );
-
+            DoSerialPortAction(() => ExecuteWaitAndRead(command));
         }
 
         [Serializable]

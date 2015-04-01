@@ -1,9 +1,30 @@
-﻿using System.Text;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Windows;
+using System.Windows.Resources;
 
 namespace NodeMCU_Studio_2015
 {
     static class Utilities
     {
+        public static void ResourceToList(String resourcePath, ICollection<string> list)
+        {
+            var sri = Application.GetResourceStream(new Uri(resourcePath, UriKind.Relative));
+            if (sri == null) return;
+
+            using (var sr = new StreamReader(sri.Stream))
+            {
+                string line;
+                while ((line = sr.ReadLine()) != null)
+                {
+                    list.Add(Regex.Unescape(line));
+                }
+            }
+        }
+
         public static string Escape(string command)
         {
             var output = new StringBuilder(command.Length);

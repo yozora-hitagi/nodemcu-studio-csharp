@@ -11,16 +11,16 @@ namespace NodeMCU_Studio_2015
         public StartScreen()
         {
             InitializeComponent();
-            SynchronizationContext context = SynchronizationContext.Current;
+            var context = SynchronizationContext.Current;
 
             new Task(() => {
-                Thread.Sleep(3000);
+                Thread.Sleep(1000);
 
                 context.Post(_ =>
                 {
-                    Hide();
-                    PowerfulLuaEditor editor = new PowerfulLuaEditor(this);
+                    var editor = new MainWindow();
                     editor.Show();
+                    Close();
                 }, null);
                 
             }).Start();

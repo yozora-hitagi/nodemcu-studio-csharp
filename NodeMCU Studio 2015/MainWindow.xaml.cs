@@ -1,35 +1,31 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.IO;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Forms;
 using System.Windows.Input;
-using System.Windows.Media;
+using System.Windows.Threading;
 using Antlr4.Runtime;
 using ICSharpCode.AvalonEdit;
 using ICSharpCode.AvalonEdit.CodeCompletion;
-using ICSharpCode.AvalonEdit.Document;
 using ICSharpCode.AvalonEdit.Folding;
-using MessageBox = System.Windows.MessageBox;
+using Microsoft.Win32;
 
 namespace NodeMCU_Studio_2015
 {
     /// <summary>
-    /// Interaction logic for MainWindow.xaml
+    ///     Interaction logic for MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window, IDisposable
     {
+        public static ViewModel ViewModel;
+        private readonly IList<ICompletionData> _completionDatas;
         private readonly List<string> _keywords = new List<string>();
         private readonly List<string> _methods = new List<string>();
         private readonly List<string> _snippets = new List<string>();
-        public static ViewModel ViewModel;
-        private readonly IList<ICompletionData> _completionDatas;
         private readonly TaskScheduler _uiThreadScheduler;
+        private CompletionWindow _completionWindow;
 
         public MainWindow()
         {
@@ -50,6 +46,24 @@ namespace NodeMCU_Studio_2015
             _uiThreadScheduler = TaskScheduler.FromCurrentSynchronizationContext();
         }
 
+        private TextEditor CurrentEditor
+        {
+            get { return ViewModel.TabItems[ViewModel.CurrentTabItemIndex].Editor; }
+            set { ViewModel.TabItems[ViewModel.CurrentTabItemIndex].Editor = value; }
+        }
+
+        private TabItem CurrentTabItem
+        {
+            get { return ViewModel.TabItems[ViewModel.CurrentTabItemIndex]; }
+            set { ViewModel.TabItems[ViewModel.CurrentTabItemIndex] = value; }
+        }
+
+        private FoldingManager CurrentManager
+        {
+            get { return ViewModel.TabItems[ViewModel.CurrentTabItemIndex].Manager; }
+            set { ViewModel.TabItems[ViewModel.CurrentTabItemIndex].Manager = value; }
+        }
+
         public void Dispose()
         {
             Dispose(true);
@@ -63,9 +77,25 @@ namespace NodeMCU_Studio_2015
             }
         }
 
-        private void OnNew(object sender, RoutedEventArgs args)
+        private void OnNewExecuted(object sender, RoutedEventArgs args)
         {
             CreateTab(null);
+        }
+
+        private void OnOpenExecuted(object sender, RoutedEventArgs args)
+        {
+            var dialog = new OpenFileDialog
+            {
+                CheckFileExists = true,
+                Filter = "Lua files (*.lua)|*.lua|All files (*.*)|*.*",
+                Multiselect = true
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                foreach (var filename in dialog.FileNames)
+                    CreateTab(filename);
+            }
         }
 
         private void OnCut()
@@ -80,25 +110,22 @@ namespace NodeMCU_Studio_2015
         {
         }
 
-        private void OnOpen(object sender, RoutedEventArgs args)
-        {
-            
-        }
-
         private void CreateTab(string fileName)
         {
             try
             {
                 var tabItem = new TabItem
                 {
-                    Title = fileName ?? "[new]"
+                    FilePath = fileName
                 };
                 ViewModel.TabItems.Add(tabItem);
                 ViewModel.CurrentTabItemIndex = ViewModel.TabItems.Count - 1;
             }
             catch (Exception ex)
             {
-                if (MessageBox.Show(ex.Message, "Create file failed. Retry?", MessageBoxButton.YesNo, MessageBoxImage.Error) == MessageBoxResult.Yes)
+                if (
+                    MessageBox.Show(ex.Message, "Create file failed. Retry?", MessageBoxButton.YesNo,
+                        MessageBoxImage.Error) == MessageBoxResult.Yes)
                     CreateTab(fileName);
             }
         }
@@ -112,6 +139,11 @@ namespace NodeMCU_Studio_2015
             editor.TextArea.TextEntered += TextEntered;
             editor.TextArea.TextEntering += TextEntering;
 
+            if (CurrentTabItem.FilePath != null)
+            {
+                editor.Text = File.ReadAllText(CurrentTabItem.FilePath);
+            }
+
             if (CurrentManager != null)
             {
                 FoldingManager.Uninstall(CurrentManager);
@@ -120,26 +152,6 @@ namespace NodeMCU_Studio_2015
 
             Update(CurrentEditor.Text);
         }
-
-        private TextEditor CurrentEditor 
-        {
-            get
-            {
-                return ViewModel.TabItems[ViewModel.CurrentTabItemIndex].Editor;
-            }
-            set { ViewModel.TabItems[ViewModel.CurrentTabItemIndex].Editor = value; }
-        }
-
-        private FoldingManager CurrentManager
-        {
-            get
-            {
-                return ViewModel.TabItems[ViewModel.CurrentTabItemIndex].Manager;
-            }
-            set { ViewModel.TabItems[ViewModel.CurrentTabItemIndex].Manager = value; }
-        }
-
-        private CompletionWindow _completionWindow;
 
         private void TextEntered(object sender, TextCompositionEventArgs e)
         {
@@ -183,42 +195,13 @@ namespace NodeMCU_Studio_2015
                 var antlrInputStream = new AntlrInputStream(reader);
                 var lexer = new LuaLexer(antlrInputStream);
                 var tokens = new CommonTokenStream(lexer);
-                var parser = new LuaParser(tokens) { BuildParseTree = true};
+                var parser = new LuaParser(tokens) {BuildParseTree = true};
                 var tree = parser.block();
                 var visitor = new LuaVisitor();
                 newFoldings = visitor.Visit(tree);
             }
 
             return newFoldings ?? (newFoldings = new List<NewFolding>());
-        }
-
-        private class LuaVisitor : LuaBaseVisitor<List<NewFolding>>
-        {
-            public override List<NewFolding> VisitFunctiondefinition(LuaParser.FunctiondefinitionContext context)
-            {
-                var funcName = context.funcname().GetText();
-                var name = String.Format("{0} Line:{1}", funcName, context.Start.Line);
-                var newFolding = new NewFolding() { StartOffset = context.Start.StartIndex, EndOffset = context.Stop.StopIndex + 1, Name = name};
-                var foldings = new List<NewFolding> {newFolding};
-                foldings.AddRange(base.VisitFunctiondefinition(context));
-                return foldings;
-            }
-
-
-            protected override List<NewFolding> AggregateResult(List<NewFolding> aggregate, List<NewFolding> nextResult)
-            {
-                var foldings = new List<NewFolding>();
-                if (aggregate != null)
-                {
-                    foldings.AddRange(aggregate);
-                }
-
-                if (nextResult != null)
-                {
-                    foldings.AddRange(nextResult);
-                }
-                return foldings;
-            }
         }
 
         private void TextEntering(object sender, TextCompositionEventArgs e)
@@ -236,9 +219,48 @@ namespace NodeMCU_Studio_2015
         {
             var folding = ObjectExplorerListBox.SelectedItem as NewFolding;
             if (folding != null) CurrentEditor.CaretOffset = folding.StartOffset;
-            CurrentEditor.TextArea.Caret.BringCaretToView();
-            CurrentEditor.TextArea.Caret.Show();
-            Keyboard.Focus(CurrentEditor);
+            Dispatcher.BeginInvoke(DispatcherPriority.Input, new Action(delegate
+            {
+                CurrentEditor.TextArea.Caret.BringCaretToView();
+                CurrentEditor.TextArea.Caret.Show();
+                Keyboard.Focus(CurrentEditor);
+            }));
+        }
+
+        private class LuaVisitor : LuaBaseVisitor<List<NewFolding>>
+        {
+            public override List<NewFolding> VisitFunctiondefinition(LuaParser.FunctiondefinitionContext context)
+            {
+                var funcName = context.funcname().GetText();
+                var newFolding = new NewFolding
+                {
+                    StartOffset = context.Start.StartIndex,
+                    EndOffset = context.Stop.StopIndex + 1,
+                    Name = funcName
+                };
+                var foldings = new List<NewFolding> {newFolding};
+                var children = base.VisitFunctiondefinition(context);
+                if (children != null)
+                {
+                    foldings.AddRange(children);
+                }
+                return foldings;
+            }
+
+            protected override List<NewFolding> AggregateResult(List<NewFolding> aggregate, List<NewFolding> nextResult)
+            {
+                var foldings = new List<NewFolding>();
+                if (aggregate != null)
+                {
+                    foldings.AddRange(aggregate);
+                }
+
+                if (nextResult != null)
+                {
+                    foldings.AddRange(nextResult);
+                }
+                return foldings;
+            }
         }
     }
 }

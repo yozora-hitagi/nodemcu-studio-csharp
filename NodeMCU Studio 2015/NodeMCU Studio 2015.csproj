@@ -92,7 +92,6 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="CompletionData.cs" />
-    <Compile Include="CustomTextEditor.cs" />
     <Compile Include="Lua.g4.lexer.cs">
       <DependentUpon>Lua.g4</DependentUpon>
     </Compile>
@@ -102,12 +101,6 @@
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
     </Compile>
-    <None Include="obj\Debug\LuaBaseListener.cs" />
-    <None Include="obj\Debug\LuaBaseVisitor.cs" />
-    <None Include="obj\Debug\LuaLexer.cs" />
-    <None Include="obj\Debug\LuaListener.cs" />
-    <None Include="obj\Debug\LuaParser.cs" />
-    <None Include="obj\Debug\LuaVisitor.cs" />
     <Compile Include="Properties\Annotations.cs" />
     <Compile Include="SerialPort.cs" />
     <Compile Include="StartScreen.xaml.cs">
@@ -146,7 +139,9 @@
       <Generator>MSBuild:Compile</Generator>
       <CustomToolNamespace>NodeMCU_Studio_2015</CustomToolNamespace>
     </Antlr4>
-    <None Include="packages.config" />
+    <None Include="packages.config">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>

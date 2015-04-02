@@ -9,6 +9,10 @@
         <Image Source="Resources/Openfile.png" x:Key="OpenImage"/>
         <Image Source="Resources/Newfile.png" x:Key="NewImage"/>
     </Window.Resources>
+    <Window.CommandBindings>
+        <CommandBinding Command="New" Executed="OnNewExecuted" />
+        <CommandBinding Command="Open" Executed="OnOpenExecuted" />
+    </Window.CommandBindings>
     <Window.DataContext>
         <local:ViewModel />
     </Window.DataContext>
@@ -27,8 +31,8 @@
         </Grid.ColumnDefinitions>
         <Menu x:Name="Menu" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2">
             <MenuItem Header="FILE">
-                <MenuItem Header="New" Icon="{StaticResource NewImage}" Click="OnNew"/>
-                <MenuItem Header="Open" Icon="{StaticResource OpenImage}" Click="OnOpen"/>
+                <MenuItem Header="New" Icon="{StaticResource NewImage}" Command="New"/>
+                <MenuItem Header="Open" Icon="{StaticResource OpenImage}" Command="Open"/>
             </MenuItem>
             <MenuItem Header="EDIT"/>
             <MenuItem Header="VIEW"/>
@@ -36,20 +40,20 @@
         </Menu>
         <ToolBarTray Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2">
             <ToolBar>
-                <Button Content="{StaticResource NewImage}" Click="OnNew"/>
-                <Button Content="{StaticResource OpenImage}" Click="OnOpen"/>
+                <Button Content="{StaticResource NewImage}" Command="New"/>
+                <Button Content="{StaticResource OpenImage}" Command="Open"/>
             </ToolBar>
         </ToolBarTray>
         <TabControl Grid.Row="2" Grid.Column="1" x:Name="TabControl" ItemsSource="{Binding TabItems}" SelectedIndex="{Binding CurrentTabItemIndex}" local:TabContent.IsCached="True">
             <TabControl.ItemTemplate>
                 <DataTemplate>
-                    <TextBlock Text="{Binding Title}"/>
+                    <TextBlock Text="{Binding FileName, TargetNullValue=[new]}"/>
                 </DataTemplate>
             </TabControl.ItemTemplate>
 
             <local:TabContent.Template>
                 <DataTemplate DataType="local:TabItem">
-                    <local:CustomTextEditor x:Name="Editor" ShowLineNumbers="True" SyntaxHighlighting="{Binding HighlightingDefinition}" Loaded="OnEditorLoaded"/>
+                    <avalonEdit:TextEditor x:Name="Editor" ShowLineNumbers="True" SyntaxHighlighting="{Binding HighlightingDefinition}" Loaded="OnEditorLoaded"/>
                 </DataTemplate>
             </local:TabContent.Template>
         </TabControl>

@@ -17,13 +17,15 @@ namespace NodeMCU_Studio_2015
 {
     public sealed class TabItem : INotifyPropertyChanged
     {
-        private String _title;
+        private String _filePath;
+        private String _fileName;
         private TextEditor _editor;
         private FoldingManager _manager;
 
         public TabItem()
         {
-            _title = "";
+            _filePath = "";
+            _fileName = "";
         }
 
         private static IHighlightingDefinition _highlightingDefinition;
@@ -77,17 +79,25 @@ namespace NodeMCU_Studio_2015
             }
         }
 
-        public String Title
+        public String FilePath
         {
-            get { return _title; }
+            get { return _filePath; }
             set
             {
-                if (value != _title)
+                if (value != _filePath)
                 {
-                    _title = value;
-                    OnPropertyChanged("Title");
+                    _filePath = value;
+                    _fileName = Path.GetFileName(_filePath);
+                    OnPropertyChanged("FilePath");
+                    OnPropertyChanged("FileName");
                 }
             }
+        }
+
+        public String FileName
+        {
+            get { return _fileName; }
+            private set { _filePath = value; }
         }
 
         public event PropertyChangedEventHandler PropertyChanged;

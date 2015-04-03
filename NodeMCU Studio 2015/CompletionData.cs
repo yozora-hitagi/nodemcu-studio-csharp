@@ -13,6 +13,8 @@ namespace NodeMCU_Studio_2015
     {
         public void Complete(TextArea textArea, ISegment completionSegment, EventArgs insertionRequestEventArgs)
         {
+            //var dotOffest = Text.IndexOf(".", StringComparison.Ordinal) + 1;
+            //var segment = new TextSegment(){StartOffset = completionSegment.Offset - dotOffest, EndOffset = completionSegment.EndOffset, Length = completionSegment.Length + dotOffest};
             textArea.Document.Replace(completionSegment, this.Text);
         }
 

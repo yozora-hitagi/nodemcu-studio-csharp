@@ -8,11 +8,18 @@
         <local:XshdToSyntaxHighlightingConverter x:Key="XshdToSyntaxHighlightingConverter"/>
         <Image Source="Resources/Openfile.png" x:Key="OpenImage"/>
         <Image Source="Resources/Newfile.png" x:Key="NewImage"/>
+        <Image Source="Resources/Savefile.png" x:Key="SaveImage"/>
     </Window.Resources>
     <Window.CommandBindings>
         <CommandBinding Command="New" Executed="OnNewExecuted" />
+        <CommandBinding Command="Save" Executed="OnSaveExecuted"  CanExecute="OnSaveCanExecute"/>
         <CommandBinding Command="Open" Executed="OnOpenExecuted" />
     </Window.CommandBindings>
+    <Window.InputBindings>
+        <KeyBinding Modifiers="Control" Key="S" Command="Save" />
+        <KeyBinding Modifiers="Control" Key="N" Command="New" />
+        <KeyBinding Modifiers="Control" Key="O" Command="Open" />
+    </Window.InputBindings>
     <Window.DataContext>
         <local:ViewModel />
     </Window.DataContext>
@@ -33,29 +40,32 @@
             <MenuItem Header="FILE">
                 <MenuItem Header="New" Icon="{StaticResource NewImage}" Command="New"/>
                 <MenuItem Header="Open" Icon="{StaticResource OpenImage}" Command="Open"/>
+                <MenuItem Header="Save" Icon="{StaticResource SaveImage}" Command="Save"/>
             </MenuItem>
-            <MenuItem Header="EDIT"/>
-            <MenuItem Header="VIEW"/>
             <MenuItem Header="DEVICE"/>
         </Menu>
         <ToolBarTray Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2">
             <ToolBar>
                 <Button Content="{StaticResource NewImage}" Command="New"/>
                 <Button Content="{StaticResource OpenImage}" Command="Open"/>
+                <Button Content="{StaticResource SaveImage}" Command="Save"/>
             </ToolBar>
         </ToolBarTray>
-        <TabControl Grid.Row="2" Grid.Column="1" x:Name="TabControl" ItemsSource="{Binding TabItems}" SelectedIndex="{Binding CurrentTabItemIndex}" local:TabContent.IsCached="True">
+        <TabControl Grid.Row="2" Grid.Column="1" x:Name="TabControl" ItemsSource="{Binding TabItems}" SelectedIndex="{Binding CurrentTabItemIndex}" SelectionChanged="TabControl_OnSelectionChanged">
             <TabControl.ItemTemplate>
                 <DataTemplate>
-                    <TextBlock Text="{Binding FileName, TargetNullValue=[new]}"/>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{Binding FileName, TargetNullValue=[new]}" Height="18"/>
+                        <Button Content="X" Click="OnCloseTab" Background="Transparent" Height="18" Margin="10,0,0,0" FontFamily="Consolas"/>
+                    </StackPanel>
                 </DataTemplate>
             </TabControl.ItemTemplate>
 
-            <local:TabContent.Template>
+            <TabControl.ContentTemplate>
                 <DataTemplate DataType="local:TabItem">
-                    <avalonEdit:TextEditor x:Name="Editor" ShowLineNumbers="True" SyntaxHighlighting="{Binding HighlightingDefinition}" Loaded="OnEditorLoaded"/>
+                    <avalonEdit:TextEditor x:Name="Editor" ShowLineNumbers="True" SyntaxHighlighting="{Binding HighlightingDefinition}" Loaded="OnEditorLoaded" TextChanged="Editor_OnTextChanged"/>
                 </DataTemplate>
-            </local:TabContent.Template>
+            </TabControl.ContentTemplate>
         </TabControl>
         <avalonEdit:TextEditor Grid.Row="3" x:Name="ConsoleTextEditor" Text="&gt; " ShowLineNumbers="True" IsReadOnly="True" Grid.Column="1"/>
         <ListBox Grid.Row="2" Grid.Column="0" Grid.RowSpan="3" x:Name="ObjectExplorerListBox" ItemsSource="{Binding Functions}" >

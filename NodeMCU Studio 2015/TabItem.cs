@@ -19,13 +19,11 @@ namespace NodeMCU_Studio_2015
     {
         private String _filePath;
         private String _fileName;
-        private TextEditor _editor;
-        private FoldingManager _manager;
+        private String _text;
 
         public TabItem()
         {
-            _filePath = "";
-            _fileName = "";
+            _text = "";
         }
 
         private static IHighlightingDefinition _highlightingDefinition;
@@ -53,31 +51,19 @@ namespace NodeMCU_Studio_2015
             set { throw new NotImplementedException();} 
         }
 
-        public FoldingManager Manager
+        public String Text
         {
-            get { return _manager; }
+            get { return _text; }
             set
             {
-                if (value != _manager)
+                if (value != _text)
                 {
-                    _manager = value;
-                    OnPropertyChanged("Manager");
+                    _text = value;
+                    OnPropertyChanged("Text");
                 }
             }
         }
 
-        public TextEditor Editor
-        {
-            get { return _editor; }
-            set
-            {
-                if (value != _editor)
-                {
-                    _editor = value;
-                    OnPropertyChanged("Editor");
-                }
-            }
-        }
 
         public String FilePath
         {

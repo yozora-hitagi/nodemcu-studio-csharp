@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
 using Antlr4.Runtime;
@@ -19,7 +20,7 @@ namespace NodeMCU_Studio_2015
     /// </summary>
     public partial class MainWindow : Window, IDisposable
     {
-        public static ViewModel ViewModel;
+        private static ViewModel _viewModel;
         private readonly IList<ICompletionData> _completionDatas;
         private readonly List<string> _keywords = new List<string>();
         private readonly List<string> _methods = new List<string>();
@@ -35,7 +36,7 @@ namespace NodeMCU_Studio_2015
             Utilities.ResourceToList("Resources/methods.setting", _methods);
             Utilities.ResourceToList("Resources/snippets.setting", _snippets);
 
-            ViewModel = DataContext as ViewModel;
+            _viewModel = DataContext as ViewModel;
 
             _completionDatas = new List<ICompletionData>();
             foreach (var method in _methods)
@@ -44,24 +45,6 @@ namespace NodeMCU_Studio_2015
             }
 
             _uiThreadScheduler = TaskScheduler.FromCurrentSynchronizationContext();
-        }
-
-        private TextEditor CurrentEditor
-        {
-            get { return ViewModel.TabItems[ViewModel.CurrentTabItemIndex].Editor; }
-            set { ViewModel.TabItems[ViewModel.CurrentTabItemIndex].Editor = value; }
-        }
-
-        private TabItem CurrentTabItem
-        {
-            get { return ViewModel.TabItems[ViewModel.CurrentTabItemIndex]; }
-            set { ViewModel.TabItems[ViewModel.CurrentTabItemIndex] = value; }
-        }
-
-        private FoldingManager CurrentManager
-        {
-            get { return ViewModel.TabItems[ViewModel.CurrentTabItemIndex].Manager; }
-            set { ViewModel.TabItems[ViewModel.CurrentTabItemIndex].Manager = value; }
         }
 
         public void Dispose()
@@ -98,8 +81,31 @@ namespace NodeMCU_Studio_2015
             }
         }
 
-        private void OnCut()
+        private void OnSaveExecuted(object sender, RoutedEventArgs args)
         {
+            if (CurrentTabItem.FilePath != null)
+            {
+                File.WriteAllText(CurrentTabItem.FilePath, _viewModel.Editor.Text);
+            }
+            else
+            {
+                var dialog = new SaveFileDialog()
+                {
+                    Filter = "Lua files (*.lua)|*.lua|All files (*.*)|*.*"
+                };
+                if (dialog.ShowDialog() == true)
+                {
+                    CurrentTabItem.FilePath = dialog.FileName;
+                    File.WriteAllText(CurrentTabItem.FilePath, _viewModel.Editor.Text);
+                }
+            }
+        }
+
+        private void OnSaveCanExecute(object sender, CanExecuteRoutedEventArgs args)
+        {
+            args.CanExecute = false;
+            if (_viewModel != null) 
+                    args.CanExecute = _viewModel.TabItems.Count != 0;
         }
 
         private void OnCopy()
@@ -118,8 +124,13 @@ namespace NodeMCU_Studio_2015
                 {
                     FilePath = fileName
                 };
-                ViewModel.TabItems.Add(tabItem);
-                ViewModel.CurrentTabItemIndex = ViewModel.TabItems.Count - 1;
+
+                if (fileName != null)
+                {
+                    tabItem.Text = File.ReadAllText(fileName);
+                }
+                _viewModel.TabItems.Add(tabItem);
+                _viewModel.CurrentTabItemIndex = _viewModel.TabItems.Count - 1;
             }
             catch (Exception ex)
             {
@@ -130,34 +141,44 @@ namespace NodeMCU_Studio_2015
             }
         }
 
+        private TabItem CurrentTabItem
+        {
+            get
+            {
+                return _viewModel.CurrentTabItemIndex == -1 ? null : _viewModel.TabItems[_viewModel.CurrentTabItemIndex];
+            }
+        }
+
         private void OnEditorLoaded(object sender, RoutedEventArgs e)
         {
             var editor = e.Source as TextEditor;
             if (editor == null) return;
 
-            CurrentEditor = editor;
+            _viewModel.Editor = editor;
             editor.TextArea.TextEntered += TextEntered;
             editor.TextArea.TextEntering += TextEntering;
 
-            if (CurrentTabItem.FilePath != null)
-            {
-                editor.Text = File.ReadAllText(CurrentTabItem.FilePath);
-            }
-
-            if (CurrentManager != null)
-            {
-                FoldingManager.Uninstall(CurrentManager);
-            }
-            CurrentManager = FoldingManager.Install(editor.TextArea);
-
-            Update(CurrentEditor.Text);
+            _viewModel.FoldingManager = FoldingManager.Install(editor.TextArea);
         }
 
         private void TextEntered(object sender, TextCompositionEventArgs e)
         {
+            var text = _viewModel.Editor.Text;
             if (e.Text == ".")
             {
-                _completionWindow = new CompletionWindow(CurrentEditor.TextArea);
+                var index = _viewModel.Editor.CaretOffset - 1;
+                while (index > 0)
+                {
+                    if (Char.IsLetterOrDigit(text[index]) || text[index] == '.')
+                    {
+                        index--;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+                _completionWindow = new CompletionWindow(_viewModel.Editor.TextArea) { CloseWhenCaretAtBeginning = true, StartOffset = index + 1 };
                 foreach (var item in _completionDatas)
                 {
                     _completionWindow.CompletionList.CompletionData.Add(item);
@@ -165,8 +186,6 @@ namespace NodeMCU_Studio_2015
                 _completionWindow.Show();
                 _completionWindow.Closed += delegate { _completionWindow = null; };
             }
-
-            var text = CurrentEditor.Text;
             Update(text);
         }
 
@@ -177,19 +196,19 @@ namespace NodeMCU_Studio_2015
                 var newFoldings = CreateNewFoldings(text);
                 new Task(() =>
                 {
-                    ViewModel.Functions.Clear();
+                    _viewModel.Functions.Clear();
                     foreach (var folding in newFoldings)
                     {
-                        ViewModel.Functions.Add(folding);
+                        _viewModel.Functions.Add(folding);
                     }
-                    CurrentManager.UpdateFoldings(newFoldings, -1);
+                    _viewModel.FoldingManager.UpdateFoldings(newFoldings, -1);
                 }).Start(_uiThreadScheduler);
             });
         }
 
         private static List<NewFolding> CreateNewFoldings(String text)
         {
-            List<NewFolding> newFoldings;
+            List<NewFolding> newFoldings = null;
             using (var reader = new StringReader(text))
             {
                 var antlrInputStream = new AntlrInputStream(reader);
@@ -200,8 +219,7 @@ namespace NodeMCU_Studio_2015
                 var visitor = new LuaVisitor();
                 newFoldings = visitor.Visit(tree);
             }
-
-            return newFoldings ?? (newFoldings = new List<NewFolding>());
+            return newFoldings ?? new List<NewFolding>();
         }
 
         private void TextEntering(object sender, TextCompositionEventArgs e)
@@ -218,12 +236,12 @@ namespace NodeMCU_Studio_2015
         private void OnObjectExplorerItemDoubleClick(object sender, RoutedEventArgs e)
         {
             var folding = ObjectExplorerListBox.SelectedItem as NewFolding;
-            if (folding != null) CurrentEditor.CaretOffset = folding.StartOffset;
+            if (folding != null) _viewModel.Editor.CaretOffset = folding.StartOffset;
             Dispatcher.BeginInvoke(DispatcherPriority.Input, new Action(delegate
             {
-                CurrentEditor.TextArea.Caret.BringCaretToView();
-                CurrentEditor.TextArea.Caret.Show();
-                Keyboard.Focus(CurrentEditor);
+                _viewModel.Editor.TextArea.Caret.BringCaretToView();
+                _viewModel.Editor.TextArea.Caret.Show();
+                Keyboard.Focus(_viewModel.Editor);
             }));
         }
 
@@ -261,6 +279,34 @@ namespace NodeMCU_Studio_2015
                 }
                 return foldings;
             }
+        }
+
+        private void Editor_OnTextChanged(object sender, EventArgs e)
+        {
+            CurrentTabItem.Text = _viewModel.Editor.Text;
+        }
+
+        private void TabControl_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_viewModel.Editor != null && CurrentTabItem != null)
+            {
+                _viewModel.Editor.Text = CurrentTabItem.Text;
+                Update(CurrentTabItem.Text);
+            }
+        }
+
+        private void OnCloseTab(object sender, RoutedEventArgs e)
+        {
+            if (_viewModel.Editor != null && CurrentTabItem != null && _viewModel.TabItems.Count >= 2)
+            {
+                _viewModel.Editor.Text = CurrentTabItem.Text;
+                Update(CurrentTabItem.Text);
+            } else if (_viewModel.Editor != null)
+            {
+                _viewModel.Editor.Text = "";
+                Update("");
+            }
+            _viewModel.TabItems.RemoveAt(_viewModel.CurrentTabItemIndex);
         }
     }
 }

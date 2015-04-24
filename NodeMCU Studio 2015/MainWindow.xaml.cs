@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
+using System.Data.SqlTypes;
 using System.IO;
 using System.Linq;
 using System.Security.RightsManagement;
@@ -9,8 +11,13 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.TextFormatting;
 using System.Windows.Threading;
 using Antlr4.Runtime;
+using Antlr4.Runtime.Atn;
+using Antlr4.Runtime.Dfa;
+using Antlr4.Runtime.Sharpen;
 using ICSharpCode.AvalonEdit;
 using ICSharpCode.AvalonEdit.CodeCompletion;
 using ICSharpCode.AvalonEdit.Folding;
@@ -28,8 +35,9 @@ namespace NodeMCU_Studio_2015
         private readonly List<string> _keywords = new List<string>();
         private readonly List<string> _methods = new List<string>();
         private readonly List<string> _snippets = new List<string>();
-        private readonly TaskScheduler _uiThreadScheduler;
+        private static TaskScheduler _uiThreadScheduler;
         private CompletionWindow _completionWindow;
+        private TextMarkerService _textMarkerService;
 
         public static readonly RoutedUICommand DownloadCommand = new RoutedUICommand();
         public static readonly RoutedUICommand UploadCommand = new RoutedUICommand();
@@ -75,7 +83,7 @@ namespace NodeMCU_Studio_2015
             {
                 new Task(() =>
                 {
-                    CommandTextBox.IsEnabled = UploadButton.IsEnabled = DownloadButton.IsEnabled = !isWorking;
+                    ConnectButton.IsEnabled = CommandTextBox.IsEnabled = UploadButton.IsEnabled = DownloadButton.IsEnabled = !isWorking;
                 }).Start(_uiThreadScheduler);
             };
 
@@ -84,8 +92,22 @@ namespace NodeMCU_Studio_2015
                 new Task(() =>
                 {
                     ConsoleTextEditor.AppendText(data);
+                    ConsoleTextEditor.ScrollToEnd();
                 }).Start(_uiThreadScheduler);
             };
+
+            new Task(() =>
+            {
+                while (true)
+                {
+                    lock (SerialPort.GetInstance().Lock)
+                    {
+                        var s = SerialPort.GetInstance().CurrentSp.ReadExisting();
+                        SerialPort.GetInstance().FireOnDataReceived(s);
+                    }
+                    Thread.Sleep(1000);
+                }
+            }).Start();
 
             if (_viewModel != null) _viewModel.ConnectionImage = Resources["ConnectImage"] as Image;
         }
@@ -401,6 +423,13 @@ namespace NodeMCU_Studio_2015
             editor.TextArea.TextEntering += TextEntering;
 
             _viewModel.FoldingManager = FoldingManager.Install(editor.TextArea);
+
+            _textMarkerService = new TextMarkerService(editor.Document);
+            editor.TextArea.TextView.BackgroundRenderers.Add(_textMarkerService);
+            editor.TextArea.TextView.LineTransformers.Add(_textMarkerService);
+            var services = editor.Document.ServiceProvider.GetService(typeof (IServiceContainer)) as IServiceContainer;
+            if (services != null)
+                services.AddService(typeof(ITextMarkerService), _textMarkerService);
         }
 
         private void TextEntered(object sender, TextCompositionEventArgs e)
@@ -433,6 +462,9 @@ namespace NodeMCU_Studio_2015
 
         private void Update(string text)
         {
+            if (_textMarkerService != null)
+                _textMarkerService.RemoveAll(m => true);
+
             ThreadPool.QueueUserWorkItem(delegate
             {
                 var newFoldings = CreateNewFoldings(text);
@@ -448,19 +480,51 @@ namespace NodeMCU_Studio_2015
             });
         }
 
-        private static List<NewFolding> CreateNewFoldings(String text)
+        private class MyErrorListener : BaseErrorListener
         {
-            List<NewFolding> newFoldings;
-            using (var reader = new StringReader(text))
+            private readonly TextMarkerService _textMarkerService;
+            public MyErrorListener(TextMarkerService service)
             {
-                var antlrInputStream = new AntlrInputStream(reader);
-                var lexer = new LuaLexer(antlrInputStream);
-                var tokens = new CommonTokenStream(lexer);
-                var parser = new LuaParser(tokens) {BuildParseTree = true};
-                var tree = parser.block();
-                var visitor = new LuaVisitor();
-                newFoldings = visitor.Visit(tree);
+                _textMarkerService = service;
             }
+
+            public override void SyntaxError(IRecognizer recognizer, IToken offendingSymbol, int line, int charPositionInLine, string msg, RecognitionException recognitionException)
+            {
+                new Task(() =>
+                {
+                    var offest = _viewModel.Editor.Document.GetOffset(line, charPositionInLine);
+                    _textMarkerService.RemoveAll(m => true);
+                    var marker = _textMarkerService.Create(offest, 1);
+                    marker.MarkerTypes = TextMarkerTypes.SquigglyUnderline;
+                    marker.MarkerColor = Colors.Red;
+                }).Start(_uiThreadScheduler);
+                
+            }
+        }
+
+        private List<NewFolding> CreateNewFoldings(String text)
+        {
+            List<NewFolding> newFoldings = null;
+            try
+            {
+                using (var reader = new StringReader(text))
+                {
+                    var antlrInputStream = new AntlrInputStream(reader);
+                    var lexer = new LuaLexer(antlrInputStream);
+                    var tokens = new CommonTokenStream(lexer);
+                    var parser = new LuaParser(tokens) {BuildParseTree = true};
+                    parser.RemoveErrorListeners();
+                    parser.AddErrorListener(new MyErrorListener(_textMarkerService));
+                    var tree = parser.block();
+                    var visitor = new LuaVisitor();
+                    newFoldings = visitor.Visit(tree);
+                }
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.ToString());
+            }
+            
             return newFoldings ?? new List<NewFolding>();
         }
 

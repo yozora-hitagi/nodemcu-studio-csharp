@@ -52,7 +52,7 @@
             </MenuItem>
             <MenuItem Header="DEVICE"/>
         </Menu>
-        <ToolBarTray Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2">
+        <ToolBarTray Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" IsLocked="True">
             <ToolBar>
                 <Button Content="{StaticResource NewImage}" Command="New"/>
                 <Button Content="{StaticResource OpenImage}" Command="Open"/>
@@ -82,7 +82,7 @@
                 </DataTemplate>
             </TabControl.ContentTemplate>
         </TabControl>
-        <avalonEdit:TextEditor Grid.Row="3" x:Name="ConsoleTextEditor" Text="&gt; " ShowLineNumbers="True" IsReadOnly="True" Grid.Column="1"/>
+        <avalonEdit:TextEditor Grid.Row="3" x:Name="ConsoleTextEditor" Text="&gt; " ShowLineNumbers="True" IsReadOnly="True" Grid.Column="1" />
         <ListBox Grid.Row="2" Grid.Column="0" Grid.RowSpan="3" x:Name="ObjectExplorerListBox" ItemsSource="{Binding Functions}" >
             <ListBox.ItemTemplate>
                 <DataTemplate>
@@ -98,7 +98,7 @@
                 </Style>
             </ListBox.ItemContainerStyle>
         </ListBox>
-        <TextBox Grid.Row="4" Grid.Column="1" KeyUp="TextBox_KeyUp" x:Name="CommandTextBox"/>
+        <TextBox Grid.Row="4" Grid.Column="1" KeyUp="TextBox_KeyUp" x:Name="CommandTextBox" />
         <StatusBar Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" />
     </Grid>
 </Window>

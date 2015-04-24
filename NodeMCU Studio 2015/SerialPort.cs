@@ -124,6 +124,20 @@ namespace NodeMCU_Studio_2015
             }
         }
 
+        public void FireOnDataReceived(string s)
+        {
+            if (OnDataReceived == null) return;
+
+            try
+            {
+                OnDataReceived(s);
+            }
+            catch
+            {
+                // ignored
+            }
+        }
+
         public event Action<bool> IsOpenChanged;
         public event Action<string> OnDataReceived;
         public event Action<bool> IsWorkingChanged;

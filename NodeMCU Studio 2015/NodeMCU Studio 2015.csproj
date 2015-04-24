@@ -92,6 +92,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="CompletionData.cs" />
+    <Compile Include="ITextMarker.cs" />
     <Compile Include="Lua.g4.lexer.cs">
       <DependentUpon>Lua.g4</DependentUpon>
     </Compile>
@@ -107,6 +108,7 @@
       <DependentUpon>StartScreen.xaml</DependentUpon>
     </Compile>
     <Compile Include="TabItem.cs" />
+    <Compile Include="TextMarkerService.cs" />
     <Compile Include="UploadWindow.xaml.cs">
       <DependentUpon>UploadWindow.xaml</DependentUpon>
     </Compile>

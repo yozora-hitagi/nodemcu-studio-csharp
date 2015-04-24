@@ -3,23 +3,18 @@ using System.ComponentModel;
 using System.IO;
 using System.Threading;
 using System.Windows;
-using System.Windows.Resources;
 using System.Xml;
-using ICSharpCode.AvalonEdit;
-using ICSharpCode.AvalonEdit.Document;
-using ICSharpCode.AvalonEdit.Folding;
 using ICSharpCode.AvalonEdit.Highlighting;
 using ICSharpCode.AvalonEdit.Highlighting.Xshd;
 using NodeMCU_Studio_2015.Annotations;
-using NodeMCU_Studio_2015.Properties;
 
 namespace NodeMCU_Studio_2015
 {
     public sealed class TabItem : INotifyPropertyChanged
     {
         private String _filePath;
-        private String _fileName;
         private String _text;
+        private Int32 _index;
 
         public TabItem()
         {
@@ -51,6 +46,19 @@ namespace NodeMCU_Studio_2015
             set { throw new NotImplementedException();} 
         }
 
+        public Int32 Index
+        {
+            get { return _index; }
+            set
+            {
+                if (value != _index)
+                {
+                    _index = value;
+                    OnPropertyChanged("Index");
+                }
+            }
+        }
+
         public String Text
         {
             get { return _text; }
@@ -73,18 +81,14 @@ namespace NodeMCU_Studio_2015
                 if (value != _filePath)
                 {
                     _filePath = value;
-                    _fileName = Path.GetFileName(_filePath);
+                    FileName = Path.GetFileName(_filePath);
                     OnPropertyChanged("FilePath");
                     OnPropertyChanged("FileName");
                 }
             }
         }
 
-        public String FileName
-        {
-            get { return _fileName; }
-            private set { _filePath = value; }
-        }
+        public String FileName { get; private set; }
 
         public event PropertyChangedEventHandler PropertyChanged;
 

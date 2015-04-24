@@ -15,7 +15,7 @@ namespace NodeMCU_Studio_2015
         {
             //var dotOffest = Text.IndexOf(".", StringComparison.Ordinal) + 1;
             //var segment = new TextSegment(){StartOffset = completionSegment.Offset - dotOffest, EndOffset = completionSegment.EndOffset, Length = completionSegment.Length + dotOffest};
-            textArea.Document.Replace(completionSegment, this.Text);
+            textArea.Document.Replace(completionSegment, Text);
         }
 
         public CompletionData(String text)

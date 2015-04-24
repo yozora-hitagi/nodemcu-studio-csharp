@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Security.RightsManagement;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -18,7 +21,7 @@ namespace NodeMCU_Studio_2015
     /// <summary>
     ///     Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window, IDisposable
+    public partial class MainWindow : IDisposable
     {
         private static ViewModel _viewModel;
         private readonly IList<ICompletionData> _completionDatas;
@@ -27,6 +30,9 @@ namespace NodeMCU_Studio_2015
         private readonly List<string> _snippets = new List<string>();
         private readonly TaskScheduler _uiThreadScheduler;
         private CompletionWindow _completionWindow;
+
+        public static readonly RoutedUICommand DownloadCommand = new RoutedUICommand();
+        public static readonly RoutedUICommand UploadCommand = new RoutedUICommand();
 
         public MainWindow()
         {
@@ -45,6 +51,43 @@ namespace NodeMCU_Studio_2015
             }
 
             _uiThreadScheduler = TaskScheduler.FromCurrentSynchronizationContext();
+
+            var ports = SerialPort.GetPortNames();
+            SerialPortComboBox.ItemsSource = ports;
+            if (ports.Length != 0)
+            {
+                SerialPortComboBox.SelectedIndex = 0;
+            }
+
+            SerialPort.GetInstance().IsOpenChanged += delegate (bool isOpen)
+            {
+                if (isOpen)
+                {
+                    _viewModel.ConnectionImage = Resources["DisconnectImage"] as Image;
+                }
+                else
+                {
+                    _viewModel.ConnectionImage = Resources["ConnectImage"] as Image;
+                }
+            };
+
+            SerialPort.GetInstance().IsWorkingChanged += delegate(bool isWorking)
+            {
+                new Task(() =>
+                {
+                    CommandTextBox.IsEnabled = UploadButton.IsEnabled = DownloadButton.IsEnabled = !isWorking;
+                }).Start(_uiThreadScheduler);
+            };
+
+            SerialPort.GetInstance().OnDataReceived += delegate(string data)
+            {
+                new Task(() =>
+                {
+                    ConsoleTextEditor.AppendText(data);
+                }).Start(_uiThreadScheduler);
+            };
+
+            if (_viewModel != null) _viewModel.ConnectionImage = Resources["ConnectImage"] as Image;
         }
 
         public void Dispose()
@@ -63,6 +106,174 @@ namespace NodeMCU_Studio_2015
         private void OnNewExecuted(object sender, RoutedEventArgs args)
         {
             CreateTab(null);
+        }
+
+        private void OnUploadExecuted(object sender, RoutedEventArgs args)
+        {
+            if (!SerialPort.GetInstance().CurrentSp.IsOpen)
+            {
+                if (SerialPortComboBox.SelectedItem == null)
+                {
+                    MessageBox.Show("Please select a serial port or plug the device first!");
+                    return;
+                }
+                else
+                {
+                    SerialPort.GetInstance().Open(SerialPortComboBox.SelectedItem.ToString());
+                }
+            }
+
+            var window = new UploadWindow();
+            window.Show();
+            var result = "";
+
+            DoSerialPortAction(
+                () => ExecuteWaitAndRead("for k, v in pairs(file.list()) do", _ =>
+                    ExecuteWaitAndRead("print(k)", __ => ExecuteWaitAndRead("end", str =>
+                    {
+                        result = str;
+                    }))), () => { window.FileListComboBox.ItemsSource = result.Replace("\r","").Split('\n'); });
+
+            window.UploadButton.Click += delegate
+            {
+                window.Close();
+                var s = window.FileListComboBox.SelectedItem as String;
+
+                if (s == null)
+                {
+                    MessageBox.Show("No file selected!");
+                    return;
+                }
+
+                var res = "";
+
+                DoSerialPortAction(
+                () => ExecuteWaitAndRead(string.Format("file.open(\"{0}\", \"r\")", Utilities.Escape(s)), _ =>
+                {
+                    var builder = new StringBuilder();
+                    while (true)
+                    {
+                        try
+                        {
+                            ExecuteWaitAndRead("print(file.readline())", line =>
+                            {
+                                builder.Append(line);
+                            });
+                        }
+                        catch (IgnoreMeException)
+                        {
+                            // ignore
+                            break;
+                        }
+                    }
+                    res = builder.ToString();
+                    SerialPort.GetInstance()
+                        .ExecuteAndWait("file.close()");
+
+                }), () =>
+                {
+                    CreateTab(null);
+                    CurrentTabItem.Text = res;
+                });
+
+            };
+        }
+
+        private void DoSerialPortAction(Action callback)
+        {
+            DoSerialPortAction(callback, () => { });
+        }
+
+        private void DoSerialPortAction(Action callback, Action cleanup)
+        {
+            var task = new Task(() =>
+            {
+                lock (SerialPort.GetInstance().Lock)
+                {
+                    SerialPort.GetInstance().FireIsWorkingChanged(true);
+
+                    try
+                    {
+                        callback();
+                    }
+                    catch (IgnoreMeException)
+                    {
+                        // Ignore me.
+                    }
+                    catch (Exception exception)
+                    {
+                        MessageBox.Show(string.Format("Operation failed: {0}", exception));
+                    }
+
+                }
+                SerialPort.GetInstance().FireIsWorkingChanged(false);
+            });
+
+            task.ContinueWith(_ => cleanup(), TaskScheduler.FromCurrentSynchronizationContext());
+            task.Start();
+        }
+
+        private static void ExecuteWaitAndRead(string command, Action<string> callback)
+        {
+            var line = SerialPort.GetInstance().ExecuteWaitAndRead(command);
+            if (line.Length == 2 /* \r and \n */ || line.Equals("stdin:1: open a file first\r\n"))
+            {
+                //MessageBox.Show(Resources.operation_failed);
+                throw new IgnoreMeException();
+            }
+            callback(line);
+        }
+
+        private static void ExecuteWaitAndRead(string command)
+        {
+            ExecuteWaitAndRead(command, _ => { });
+        }
+
+
+
+        private void OnDownloadExecuted(object sender, RoutedEventArgs args)
+        {
+            if (_viewModel.TabItems.Count == 0)
+            {
+                MessageBox.Show("Open a file first!");
+                return;
+            }
+            if (!SerialPort.GetInstance().CurrentSp.IsOpen)
+            {
+                if (SerialPortComboBox.SelectedItem == null)
+                {
+                    MessageBox.Show("Please select a serial port or plug the device first!");
+                    return;
+                }
+                else
+                {
+                    SerialPort.GetInstance().Open(SerialPortComboBox.SelectedItem.ToString());
+                }
+            }
+            var filename = CurrentTabItem.FileName;
+
+            DoSerialPortAction(
+                () => ExecuteWaitAndRead(string.Format("file.remove(\"{0}\")", Utilities.Escape(filename)), _ =>
+                    ExecuteWaitAndRead(string.Format("file.open(\"{0}\", \"w+\")", Utilities.Escape(filename)), __ =>
+                    {
+                        if (
+                            CurrentTabItem.Text.Split('\n')
+                                .Any(
+                                    line =>
+                                        !SerialPort.GetInstance()
+                                            .ExecuteAndWait(string.Format("file.writeline(\"{0}\")",
+                                                Utilities.Escape(line)))))
+                        {
+                            SerialPort.GetInstance().ExecuteAndWait("file.close()");
+                            //MessageBox.Show(Resources.download_to_device_failed);
+                        }
+                        else
+                        {
+                            //MessageBox.Show(!SerialPort.GetInstance().ExecuteAndWait("file.close()")
+                            //    ? Resources.download_to_device_failed
+                            //    : Resources.download_to_device_succeeded);
+                        }
+                    })), () => { });
         }
 
         private void OnOpenExecuted(object sender, RoutedEventArgs args)
@@ -116,13 +327,42 @@ namespace NodeMCU_Studio_2015
         {
         }
 
+        private void OnToggleConnect(object sender, RoutedEventArgs args)
+        {
+            if (SerialPort.GetInstance().CurrentSp.IsOpen)
+            {
+                SerialPort.GetInstance().Close();
+            }
+            else
+            {
+                if (SerialPortComboBox.SelectedItem == null)
+                {
+                    MessageBox.Show("Please select a serial port or plug the device first!");
+                } else
+                {
+                    SerialPort.GetInstance().Open(SerialPortComboBox.SelectedItem.ToString());
+                }
+            }
+        }
+
+        private void OnRefreshExecuted(object sender, EventArgs args)
+        {
+            var ports = SerialPort.GetPortNames();
+            SerialPortComboBox.ItemsSource = ports;
+            if (ports.Length != 0)
+            {
+                SerialPortComboBox.SelectedIndex = 0;
+            }
+        }
+
         private void CreateTab(string fileName)
         {
             try
             {
                 var tabItem = new TabItem
                 {
-                    FilePath = fileName
+                    FilePath = fileName,
+                    Index = _viewModel.TabItems.Count
                 };
 
                 if (fileName != null)
@@ -155,6 +395,8 @@ namespace NodeMCU_Studio_2015
             if (editor == null) return;
 
             _viewModel.Editor = editor;
+            editor.Text = CurrentTabItem.Text;
+            Update(CurrentTabItem.Text);
             editor.TextArea.TextEntered += TextEntered;
             editor.TextArea.TextEntering += TextEntering;
 
@@ -208,7 +450,7 @@ namespace NodeMCU_Studio_2015
 
         private static List<NewFolding> CreateNewFoldings(String text)
         {
-            List<NewFolding> newFoldings = null;
+            List<NewFolding> newFoldings;
             using (var reader = new StringReader(text))
             {
                 var antlrInputStream = new AntlrInputStream(reader);
@@ -288,25 +530,46 @@ namespace NodeMCU_Studio_2015
 
         private void TabControl_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (_viewModel.Editor != null && CurrentTabItem != null)
-            {
-                _viewModel.Editor.Text = CurrentTabItem.Text;
-                Update(CurrentTabItem.Text);
-            }
+            if (_viewModel.Editor == null || CurrentTabItem == null) return;
+
+            _viewModel.Editor.Text = CurrentTabItem.Text;
+            Update(CurrentTabItem.Text);
         }
 
         private void OnCloseTab(object sender, RoutedEventArgs e)
         {
-            if (_viewModel.Editor != null && CurrentTabItem != null && _viewModel.TabItems.Count >= 2)
+            var button = sender as Button;
+            if (button != null)
             {
-                _viewModel.Editor.Text = CurrentTabItem.Text;
-                Update(CurrentTabItem.Text);
-            } else if (_viewModel.Editor != null)
-            {
-                _viewModel.Editor.Text = "";
-                Update("");
+                var index = (Int32) button.Tag;
+                if (_viewModel.TabItems.Count == 1)
+                {
+                    Update("");
+                }
+                _viewModel.TabItems.RemoveAt(index);
+                var i = 0;
+                foreach (var item in _viewModel.TabItems)
+                {
+                    item.Index = i++;
+                }
             }
-            _viewModel.TabItems.RemoveAt(_viewModel.CurrentTabItemIndex);
         }
+
+        private void TextBox_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.Key != Key.Enter) return;
+
+            var text = CommandTextBox.Text;
+            CommandTextBox.Text = "";
+            DoSerialPortAction(() =>
+            {
+                ExecuteWaitAndRead(text);
+            });
+        }
+    }
+
+    [Serializable]
+    internal class IgnoreMeException : Exception
+    {
     }
 }

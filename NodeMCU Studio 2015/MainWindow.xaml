@@ -6,14 +6,22 @@
     Title="NodeMCU Studio 2015" Height="600" Width="935" MinHeight="600" MinWidth="800" Icon="Resources/nodemcu.ico">
     <Window.Resources>
         <local:XshdToSyntaxHighlightingConverter x:Key="XshdToSyntaxHighlightingConverter"/>
-        <Image Source="Resources/Openfile.png" x:Key="OpenImage"/>
-        <Image Source="Resources/Newfile.png" x:Key="NewImage"/>
-        <Image Source="Resources/Savefile.png" x:Key="SaveImage"/>
+        <Image Source="Resources/Openfile.png" x:Key="OpenImage" Height="19" />
+        <Image Source="Resources/Newfile.png" x:Key="NewImage" Height="19" />
+        <Image Source="Resources/Savefile.png" x:Key="SaveImage" Height="19" />
+        <Image Source="Resources/refresh.png" x:Key="RefreshImage" Height="19" />
+        <Image Source="Resources/connected.png" x:Key="ConnectImage" Height="19" />
+        <Image Source="Resources/disconnected.png" x:Key="DisconnectImage" Height="19" />
+        <Image Source="Resources/download.png" x:Key="DownloadImage" Height="19" />
+        <Image Source="Resources/upload.png" x:Key="UploadImage" Height="19" />
     </Window.Resources>
     <Window.CommandBindings>
         <CommandBinding Command="New" Executed="OnNewExecuted" />
         <CommandBinding Command="Save" Executed="OnSaveExecuted"  CanExecute="OnSaveCanExecute"/>
         <CommandBinding Command="Open" Executed="OnOpenExecuted" />
+        <CommandBinding Command="Refresh" Executed="OnRefreshExecuted" />
+        <CommandBinding Command="local:MainWindow.DownloadCommand" Executed="OnDownloadExecuted" />
+        <CommandBinding Command="local:MainWindow.UploadCommand" Executed="OnUploadExecuted" />
     </Window.CommandBindings>
     <Window.InputBindings>
         <KeyBinding Modifiers="Control" Key="S" Command="Save" />
@@ -50,13 +58,20 @@
                 <Button Content="{StaticResource OpenImage}" Command="Open"/>
                 <Button Content="{StaticResource SaveImage}" Command="Save"/>
             </ToolBar>
+            <ToolBar>
+                <ComboBox x:Name="SerialPortComboBox" Width="60" />
+                <Button Content="{StaticResource RefreshImage}" Command="Refresh"/>
+                <Button Click="OnToggleConnect" x:Name="ConnectButton" Content="{Binding ConnectionImage}"/>
+                <Button Content="{StaticResource DownloadImage}" Command="local:MainWindow.DownloadCommand" x:Name="DownloadButton"/>
+                <Button Content="{StaticResource UploadImage}" Command="local:MainWindow.UploadCommand" x:Name="UploadButton"/>
+            </ToolBar>
         </ToolBarTray>
         <TabControl Grid.Row="2" Grid.Column="1" x:Name="TabControl" ItemsSource="{Binding TabItems}" SelectedIndex="{Binding CurrentTabItemIndex}" SelectionChanged="TabControl_OnSelectionChanged">
             <TabControl.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="{Binding FileName, TargetNullValue=[new]}" Height="18"/>
-                        <Button Content="X" Click="OnCloseTab" Background="Transparent" Height="18" Margin="10,0,0,0" FontFamily="Consolas"/>
+                        <Button Content="X" Click="OnCloseTab" Background="Transparent" Height="18" Margin="10,0,0,0" FontFamily="Consolas" Tag="{Binding Index}"/>
                     </StackPanel>
                 </DataTemplate>
             </TabControl.ItemTemplate>
@@ -83,7 +98,7 @@
                 </Style>
             </ListBox.ItemContainerStyle>
         </ListBox>
-        <TextBox Grid.Row="4" Grid.Column="1" />
+        <TextBox Grid.Row="4" Grid.Column="1" KeyUp="TextBox_KeyUp" x:Name="CommandTextBox"/>
         <StatusBar Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" />
     </Grid>
 </Window>

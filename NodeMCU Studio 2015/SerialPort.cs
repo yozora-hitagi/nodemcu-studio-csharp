@@ -2,6 +2,8 @@
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Windows;
+using System.Windows.Threading;
 using SP = System.IO.Ports.SerialPort;
 
 namespace NodeMCU_Studio_2015
@@ -79,7 +81,10 @@ namespace NodeMCU_Studio_2015
         public string ExecuteWaitAndRead(string command)
         {
             var early = CurrentSp.ReadExisting();
-            if (OnDataReceived != null) OnDataReceived.Invoke(early);
+            if (OnDataReceived != null)
+            {
+                OnDataReceived.Invoke(early);
+            }
 
             var result = new StringBuilder();
 
@@ -107,7 +112,16 @@ namespace NodeMCU_Studio_2015
 
         public void FireIsWorkingChanged(bool state)
         {
-            if (IsWorkingChanged != null) IsWorkingChanged(state);
+            if (IsWorkingChanged == null) return;
+
+            try
+            {
+                IsWorkingChanged(state);
+            }
+            catch
+            {
+                // ignored
+            }
         }
 
         public event Action<bool> IsOpenChanged;

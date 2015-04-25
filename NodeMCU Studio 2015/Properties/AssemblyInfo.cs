@@ -9,9 +9,9 @@ using System.Windows;
 [assembly: AssemblyTitle("NodeMCU Studio 2015")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Microsoft")]
+[assembly: AssemblyCompany("NodeMCU Developers")]
 [assembly: AssemblyProduct("NodeMCU Studio 2015")]
-[assembly: AssemblyCopyright("Copyright © Microsoft 2015")]
+[assembly: AssemblyCopyright("Copyright © NodeMCU Developers 2015")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

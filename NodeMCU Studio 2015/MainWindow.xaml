@@ -83,7 +83,7 @@
             </TabControl.ContentTemplate>
         </TabControl>
         <avalonEdit:TextEditor Grid.Row="3" x:Name="ConsoleTextEditor" Text="&gt; " ShowLineNumbers="True" IsReadOnly="True" Grid.Column="1" />
-        <ListBox Grid.Row="2" Grid.Column="0" Grid.RowSpan="3" x:Name="ObjectExplorerListBox" ItemsSource="{Binding Functions}" >
+        <ListBox Grid.Row="2" Grid.Column="0" Grid.RowSpan="3" x:Name="ObjectExplorerListBox" ItemsSource="{Binding Functions}" Margin="0,2,0,0">
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal">

@@ -38,6 +38,7 @@ namespace NodeMCU_Studio_2015
         private static TaskScheduler _uiThreadScheduler;
         private CompletionWindow _completionWindow;
         private TextMarkerService _textMarkerService;
+        private Dispatcher _uiDispatcher;
 
         public static readonly RoutedUICommand DownloadCommand = new RoutedUICommand();
         public static readonly RoutedUICommand UploadCommand = new RoutedUICommand();
@@ -59,6 +60,7 @@ namespace NodeMCU_Studio_2015
             }
 
             _uiThreadScheduler = TaskScheduler.FromCurrentSynchronizationContext();
+            _uiDispatcher = Dispatcher.CurrentDispatcher;
 
             var ports = SerialPort.GetPortNames();
             SerialPortComboBox.ItemsSource = ports;
@@ -69,47 +71,65 @@ namespace NodeMCU_Studio_2015
 
             SerialPort.GetInstance().IsOpenChanged += delegate (bool isOpen)
             {
-                if (isOpen)
+                EnsureWorkInUiThread(() =>
                 {
-                    _viewModel.ConnectionImage = Resources["DisconnectImage"] as Image;
-                }
-                else
-                {
-                    _viewModel.ConnectionImage = Resources["ConnectImage"] as Image;
-                }
+                    if (isOpen)
+                    {
+                        _viewModel.ConnectionImage = Resources["DisconnectImage"] as Image;
+                    }
+                    else
+                    {
+                        _viewModel.ConnectionImage = Resources["ConnectImage"] as Image;
+                    }
+                });
             };
 
             SerialPort.GetInstance().IsWorkingChanged += delegate(bool isWorking)
             {
-                new Task(() =>
+                EnsureWorkInUiThread(() =>
                 {
                     ConnectButton.IsEnabled = CommandTextBox.IsEnabled = UploadButton.IsEnabled = DownloadButton.IsEnabled = !isWorking;
-                }).Start(_uiThreadScheduler);
+                });
             };
 
             SerialPort.GetInstance().OnDataReceived += delegate(string data)
             {
-                new Task(() =>
+                EnsureWorkInUiThread(() =>
                 {
                     ConsoleTextEditor.AppendText(data);
                     ConsoleTextEditor.ScrollToEnd();
-                }).Start(_uiThreadScheduler);
+                });
             };
 
             new Task(() =>
             {
                 while (true)
                 {
-                    lock (SerialPort.GetInstance().Lock)
+                    if (SerialPort.GetInstance().CurrentSp.IsOpen)
                     {
-                        var s = SerialPort.GetInstance().CurrentSp.ReadExisting();
-                        SerialPort.GetInstance().FireOnDataReceived(s);
+                        lock (SerialPort.GetInstance().Lock)
+                        {
+                            var s = SerialPort.GetInstance().CurrentSp.ReadExisting();
+                            SerialPort.GetInstance().FireOnDataReceived(s);
+                        }
                     }
                     Thread.Sleep(1000);
                 }
             }).Start();
 
             if (_viewModel != null) _viewModel.ConnectionImage = Resources["ConnectImage"] as Image;
+        }
+
+        private static void EnsureWorkInUiThread(Action action)
+        {
+            var dispatcher = System.Windows.Threading.Dispatcher.FromThread(Thread.CurrentThread);
+            if (dispatcher != null)
+            {
+                action();
+            } else
+            {
+                new Task(action).Start(_uiThreadScheduler);
+            }
         }
 
         public void Dispose()
@@ -132,29 +152,15 @@ namespace NodeMCU_Studio_2015
 
         private void OnUploadExecuted(object sender, RoutedEventArgs args)
         {
-            if (!SerialPort.GetInstance().CurrentSp.IsOpen)
-            {
-                if (SerialPortComboBox.SelectedItem == null)
-                {
-                    MessageBox.Show("Please select a serial port or plug the device first!");
-                    return;
-                }
-                else
-                {
-                    SerialPort.GetInstance().Open(SerialPortComboBox.SelectedItem.ToString());
-                }
-            }
-
             var window = new UploadWindow();
-            window.Show();
             var result = "";
 
             DoSerialPortAction(
-                () => ExecuteWaitAndRead("for k, v in pairs(file.list()) do", _ =>
-                    ExecuteWaitAndRead("print(k)", __ => ExecuteWaitAndRead("end", str =>
-                    {
-                        result = str;
-                    }))), () => { window.FileListComboBox.ItemsSource = result.Replace("\r","").Split('\n'); });
+                () =>
+                {
+                    ExecuteWaitAndRead("for k, v in pairs(file.list()) do", _ =>
+                        ExecuteWaitAndRead("print(k)", __ => ExecuteWaitAndRead("end", str => { result = str; })));
+                }, () => { window.FileListComboBox.ItemsSource = result.Replace("\r","").Split('\n'); });
 
             window.UploadButton.Click += delegate
             {
@@ -199,6 +205,8 @@ namespace NodeMCU_Studio_2015
                 });
 
             };
+
+            window.ShowDialog();
         }
 
         private void DoSerialPortAction(Action callback)
@@ -208,6 +216,11 @@ namespace NodeMCU_Studio_2015
 
         private void DoSerialPortAction(Action callback, Action cleanup)
         {
+            if (!EnsureSerialPortOpened())
+            {
+                return;
+            }
+
             var task = new Task(() =>
             {
                 lock (SerialPort.GetInstance().Lock)
@@ -251,7 +264,15 @@ namespace NodeMCU_Studio_2015
             ExecuteWaitAndRead(command, _ => { });
         }
 
-
+        private static IEnumerable<String> ReadLinesFrom(String s)
+        {
+            using (var reader = new StreamReader(s))
+            {
+                String line;
+                while ((line = reader.ReadLine()) != null)
+                    yield return line;
+            }
+        } 
 
         private void OnDownloadExecuted(object sender, RoutedEventArgs args)
         {
@@ -260,26 +281,20 @@ namespace NodeMCU_Studio_2015
                 MessageBox.Show("Open a file first!");
                 return;
             }
-            if (!SerialPort.GetInstance().CurrentSp.IsOpen)
-            {
-                if (SerialPortComboBox.SelectedItem == null)
-                {
-                    MessageBox.Show("Please select a serial port or plug the device first!");
-                    return;
-                }
-                else
-                {
-                    SerialPort.GetInstance().Open(SerialPortComboBox.SelectedItem.ToString());
-                }
-            }
+
             var filename = CurrentTabItem.FileName;
+            if (filename == null)
+            {
+                MessageBox.Show("Save current file first!");
+                return;
+            }
 
             DoSerialPortAction(
                 () => ExecuteWaitAndRead(string.Format("file.remove(\"{0}\")", Utilities.Escape(filename)), _ =>
                     ExecuteWaitAndRead(string.Format("file.open(\"{0}\", \"w+\")", Utilities.Escape(filename)), __ =>
                     {
                         if (
-                            CurrentTabItem.Text.Split('\n')
+                            ReadLinesFrom(CurrentTabItem.Text)
                                 .Any(
                                     line =>
                                         !SerialPort.GetInstance()
@@ -287,15 +302,15 @@ namespace NodeMCU_Studio_2015
                                                 Utilities.Escape(line)))))
                         {
                             SerialPort.GetInstance().ExecuteAndWait("file.close()");
-                            //MessageBox.Show(Resources.download_to_device_failed);
+                            MessageBox.Show("Download to device failed!");
                         }
                         else
                         {
-                            //MessageBox.Show(!SerialPort.GetInstance().ExecuteAndWait("file.close()")
-                            //    ? Resources.download_to_device_failed
-                            //    : Resources.download_to_device_succeeded);
+                            MessageBox.Show(!SerialPort.GetInstance().ExecuteAndWait("file.close()")
+                                ? "Download to device failed!"
+                                : "Download to device succeeded!");
                         }
-                    })), () => { });
+                    })));
         }
 
         private void OnOpenExecuted(object sender, RoutedEventArgs args)
@@ -357,14 +372,23 @@ namespace NodeMCU_Studio_2015
             }
             else
             {
-                if (SerialPortComboBox.SelectedItem == null)
-                {
-                    MessageBox.Show("Please select a serial port or plug the device first!");
-                } else
-                {
-                    SerialPort.GetInstance().Open(SerialPortComboBox.SelectedItem.ToString());
-                }
+                EnsureSerialPortOpened();
             }
+        }
+
+        private Boolean EnsureSerialPortOpened()
+        {
+            if (SerialPortComboBox.SelectedItem == null)
+            {
+                MessageBox.Show("Please select a serial port or plug the device first!");
+                return false;
+            }
+            else if (!SerialPort.GetInstance().Open(SerialPortComboBox.SelectedItem.ToString()))
+            {
+                MessageBox.Show("Cannot open serial port!");
+                return false;
+            }
+            return true;
         }
 
         private void OnRefreshExecuted(object sender, EventArgs args)
@@ -389,6 +413,7 @@ namespace NodeMCU_Studio_2015
 
                 if (fileName != null)
                 {
+                    // Maybe some better way is needed.
                     tabItem.Text = File.ReadAllText(fileName);
                 }
                 _viewModel.TabItems.Add(tabItem);
@@ -460,6 +485,7 @@ namespace NodeMCU_Studio_2015
             Update(text);
         }
 
+        // Potential in multithread? 
         private void Update(string text)
         {
             if (_textMarkerService != null)
@@ -468,7 +494,7 @@ namespace NodeMCU_Studio_2015
             ThreadPool.QueueUserWorkItem(delegate
             {
                 var newFoldings = CreateNewFoldings(text);
-                new Task(() =>
+                EnsureWorkInUiThread(() =>
                 {
                     _viewModel.Functions.Clear();
                     foreach (var folding in newFoldings)
@@ -476,7 +502,7 @@ namespace NodeMCU_Studio_2015
                         _viewModel.Functions.Add(folding);
                     }
                     _viewModel.FoldingManager.UpdateFoldings(newFoldings, -1);
-                }).Start(_uiThreadScheduler);
+                });
             });
         }
 
@@ -490,14 +516,14 @@ namespace NodeMCU_Studio_2015
 
             public override void SyntaxError(IRecognizer recognizer, IToken offendingSymbol, int line, int charPositionInLine, string msg, RecognitionException recognitionException)
             {
-                new Task(() =>
+                EnsureWorkInUiThread(() =>
                 {
                     var offest = _viewModel.Editor.Document.GetOffset(line, charPositionInLine);
                     _textMarkerService.RemoveAll(m => true);
                     var marker = _textMarkerService.Create(offest, 1);
                     marker.MarkerTypes = TextMarkerTypes.SquigglyUnderline;
                     marker.MarkerColor = Colors.Red;
-                }).Start(_uiThreadScheduler);
+                });
                 
             }
         }

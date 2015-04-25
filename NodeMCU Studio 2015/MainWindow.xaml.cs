@@ -87,13 +87,13 @@ namespace NodeMCU_Studio_2015
                 {
                     if (isOpen)
                     {
-                        ConnectButton.Content = _disconnectedImage;
-                        ConnectMenuItem.Icon = _disconnectedImageMenuItem;
+                        ConnectButton.Content = _connectedImage;
+                        ConnectMenuItem.Icon = _connectedImageMenuItem;
                     }
                     else
                     {
-                        ConnectButton.Content = _connectedImage;
-                        ConnectMenuItem.Icon = _connectedImageMenuItem;
+                        ConnectButton.Content = _disconnectedImage;
+                        ConnectMenuItem.Icon = _disconnectedImageMenuItem;
                     }
                 });
             };
@@ -221,7 +221,15 @@ namespace NodeMCU_Studio_2015
 
             };
 
-            window.ShowDialog();
+            if (SerialPort.GetInstance().CurrentSp.IsOpen)
+            {
+                window.ShowDialog();
+            }
+            else
+            {
+                window.Close();
+            }
+            
         }
 
         private void DoSerialPortAction(Action callback)

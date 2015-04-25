@@ -74,12 +74,13 @@ namespace NodeMCU_Studio_2015
 
             // for a toolbar and menu bug...
             _disconnectedImage = Resources["DisconnectedImage"] as Image;
-            _disconnectedImageMenuItem = Resources["DisconnectedImage"] as Image;
+            _disconnectedImageMenuItem = Resources["DisconnectedImageMenuItem"] as Image;
 
-            _connectedImage = Resources["ConnectedIamge"] as Image;
-            _connectedImageMenuItem = Resources["ConnectedIamge"] as Image;
+            _connectedImage = Resources["ConnectedImage"] as Image;
+            _connectedImageMenuItem = Resources["ConnectedImageMenuItem"] as Image;
 
-            ConnectMenuItem.Icon = ConnectButton.Content = _connectedImage;
+            ConnectButton.Content = _disconnectedImage;
+            ConnectMenuItem.Icon = _disconnectedImageMenuItem;
 
             SerialPort.GetInstance().IsOpenChanged += delegate (bool isOpen)
             {

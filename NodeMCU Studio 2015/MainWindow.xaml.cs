@@ -322,6 +322,17 @@ namespace NodeMCU_Studio_2015
                 }
             }
 
+            var text = CurrentTabItem.Text;
+            if (Encoding.Default.GetByteCount(text) != text.Length)
+            {
+                if (
+                    MessageBox.Show("Wide characters found in this file which is not supported by Lua. Download anyway?", "NodeMCU Studio 2015",
+                        MessageBoxButton.YesNo) == MessageBoxResult.No)
+                {
+                    return;
+                }
+            }
+
             DoSerialPortAction(
                 () => ExecuteWaitAndRead(string.Format("file.remove(\"{0}\")", Utilities.Escape(filename)), _ =>
                     ExecuteWaitAndRead(string.Format("file.open(\"{0}\", \"w+\")", Utilities.Escape(filename)), __ =>

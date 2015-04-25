@@ -11,8 +11,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Media.TextFormatting;
 using System.Windows.Threading;
 using Antlr4.Runtime;
@@ -41,6 +43,10 @@ namespace NodeMCU_Studio_2015
         private TextMarkerService _textMarkerService;
         private Dispatcher _uiDispatcher;
         private static Int32 _syntaxErrors = 0;
+        private Image _disconnectedImage;
+        private Image _connectedImage;
+        private Image _disconnectedImageMenuItem;
+        private Image _connectedImageMenuItem;
 
         public static readonly RoutedUICommand DownloadCommand = new RoutedUICommand();
         public static readonly RoutedUICommand UploadCommand = new RoutedUICommand();
@@ -64,12 +70,16 @@ namespace NodeMCU_Studio_2015
             _uiThreadScheduler = TaskScheduler.FromCurrentSynchronizationContext();
             _uiDispatcher = Dispatcher.CurrentDispatcher;
 
-            var ports = SerialPort.GetPortNames();
-            SerialPortComboBox.ItemsSource = ports;
-            if (ports.Length != 0)
-            {
-                SerialPortComboBox.SelectedIndex = 0;
-            }
+            RefreshSerialPort();
+
+            // for a toolbar and menu bug...
+            _disconnectedImage = Resources["DisconnectedImage"] as Image;
+            _disconnectedImageMenuItem = Resources["DisconnectedImage"] as Image;
+
+            _connectedImage = Resources["ConnectedIamge"] as Image;
+            _connectedImageMenuItem = Resources["ConnectedIamge"] as Image;
+
+            ConnectMenuItem.Icon = ConnectButton.Content = _connectedImage;
 
             SerialPort.GetInstance().IsOpenChanged += delegate (bool isOpen)
             {
@@ -77,11 +87,13 @@ namespace NodeMCU_Studio_2015
                 {
                     if (isOpen)
                     {
-                        _viewModel.ConnectionImage = Resources["DisconnectImage"] as Image;
+                        ConnectButton.Content = _disconnectedImage;
+                        ConnectMenuItem.Icon = _disconnectedImageMenuItem;
                     }
                     else
                     {
-                        _viewModel.ConnectionImage = Resources["ConnectImage"] as Image;
+                        ConnectButton.Content = _connectedImage;
+                        ConnectMenuItem.Icon = _connectedImageMenuItem;
                     }
                 });
             };
@@ -91,6 +103,7 @@ namespace NodeMCU_Studio_2015
                 EnsureWorkInUiThread(() =>
                 {
                     ConnectButton.IsEnabled = CommandTextBox.IsEnabled = UploadButton.IsEnabled = DownloadButton.IsEnabled = !isWorking;
+                    ConnectMenuItem.IsEnabled = UploadMenuItem.IsEnabled = DownloadMenuItem.IsEnabled = !isWorking;
                 });
             };
 
@@ -112,14 +125,14 @@ namespace NodeMCU_Studio_2015
                         lock (SerialPort.GetInstance().Lock)
                         {
                             var s = SerialPort.GetInstance().CurrentSp.ReadExisting();
-                            SerialPort.GetInstance().FireOnDataReceived(s);
+                            if (!String.IsNullOrEmpty(s))
+                                SerialPort.GetInstance().FireOnDataReceived(s);
                         }
                     }
                     Thread.Sleep(1000);
                 }
             }).Start();
 
-            if (_viewModel != null) _viewModel.ConnectionImage = Resources["ConnectImage"] as Image;
         }
 
         private static void EnsureWorkInUiThread(Action action)
@@ -405,12 +418,25 @@ namespace NodeMCU_Studio_2015
 
         private void OnRefreshExecuted(object sender, EventArgs args)
         {
+            RefreshSerialPort();
+        }
+
+        private void RefreshSerialPort()
+        {
             var ports = SerialPort.GetPortNames();
             SerialPortComboBox.ItemsSource = ports;
             if (ports.Length != 0)
             {
-                SerialPortComboBox.SelectedIndex = 0;
+                SerialPortComboBox.IsEnabled = true;
             }
+            else
+            {
+                var source = new string[1];
+                source[0] = "No Device";
+                SerialPortComboBox.ItemsSource = source;
+                SerialPortComboBox.IsEnabled = false;
+            }
+            SerialPortComboBox.SelectedIndex = 0;
         }
 
         private void CreateTab(string fileName)

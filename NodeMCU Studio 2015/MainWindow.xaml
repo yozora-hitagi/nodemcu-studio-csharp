@@ -6,14 +6,14 @@
     Title="NodeMCU Studio 2015" Height="600" Width="935" MinHeight="600" MinWidth="800" Icon="Resources/nodemcu.ico">
     <Window.Resources>
         <local:XshdToSyntaxHighlightingConverter x:Key="XshdToSyntaxHighlightingConverter"/>
-        <Image Source="Resources/Openfile.png" x:Key="OpenImage" Height="19" />
-        <Image Source="Resources/Newfile.png" x:Key="NewImage" Height="19" />
-        <Image Source="Resources/Savefile.png" x:Key="SaveImage" Height="19" />
-        <Image Source="Resources/refresh.png" x:Key="RefreshImage" Height="19" />
-        <Image Source="Resources/connected.png" x:Key="ConnectImage" Height="19" />
-        <Image Source="Resources/disconnected.png" x:Key="DisconnectImage" Height="19" />
-        <Image Source="Resources/download.png" x:Key="DownloadImage" Height="19" />
-        <Image Source="Resources/upload.png" x:Key="UploadImage" Height="19" />
+        <Image Source="Resources/Openfile.png" x:Key="OpenImage" Height="19" x:Shared="False"/>
+        <Image Source="Resources/Newfile.png" x:Key="NewImage" Height="19" x:Shared="False"/>
+        <Image Source="Resources/Savefile.png" x:Key="SaveImage" Height="19" x:Shared="False"/>
+        <Image Source="Resources/refresh.png" x:Key="RefreshImage" Height="19" x:Shared="False"/>
+        <Image Source="Resources/disconnected.png" x:Key="DisconnectedImage" Height="19" x:Shared="False"/>
+        <Image Source="Resources/connected.png" x:Key="ConnectedIamge" Height="19" x:Shared="False"/>
+        <Image Source="Resources/download.png" x:Key="DownloadImage" Height="19" x:Shared="False"/>
+        <Image Source="Resources/upload.png" x:Key="UploadImage" Height="19" x:Shared="False"/>
     </Window.Resources>
     <Window.CommandBindings>
         <CommandBinding Command="New" Executed="OnNewExecuted" />
@@ -50,7 +50,12 @@
                 <MenuItem Header="Open" Icon="{StaticResource OpenImage}" Command="Open"/>
                 <MenuItem Header="Save" Icon="{StaticResource SaveImage}" Command="Save"/>
             </MenuItem>
-            <MenuItem Header="DEVICE"/>
+            <MenuItem Header="DEVICE">
+                <MenuItem Header="Refresh" Icon="{StaticResource RefreshImage}" Command="Refresh"/>
+                <MenuItem Header="Connect" Click="OnToggleConnect" x:Name="ConnectMenuItem" />
+                <MenuItem Header="Download" Icon="{StaticResource DownloadImage}" Command="local:MainWindow.DownloadCommand" x:Name="DownloadMenuItem"/>
+                <MenuItem Header="Upload" Icon="{StaticResource UploadImage}" Command="local:MainWindow.UploadCommand" x:Name="UploadMenuItem"/>
+            </MenuItem>
         </Menu>
         <ToolBarTray Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" IsLocked="True">
             <ToolBar>
@@ -59,9 +64,9 @@
                 <Button Content="{StaticResource SaveImage}" Command="Save"/>
             </ToolBar>
             <ToolBar>
-                <ComboBox x:Name="SerialPortComboBox" Width="60" />
+                <ComboBox x:Name="SerialPortComboBox" Width="80" />
                 <Button Content="{StaticResource RefreshImage}" Command="Refresh"/>
-                <Button Click="OnToggleConnect" x:Name="ConnectButton" Content="{Binding ConnectionImage}"/>
+                <Button Click="OnToggleConnect" x:Name="ConnectButton" />
                 <Button Content="{StaticResource DownloadImage}" Command="local:MainWindow.DownloadCommand" x:Name="DownloadButton"/>
                 <Button Content="{StaticResource UploadImage}" Command="local:MainWindow.UploadCommand" x:Name="UploadButton"/>
             </ToolBar>

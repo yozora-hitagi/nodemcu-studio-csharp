@@ -15,7 +15,6 @@ namespace NodeMCU_Studio_2015
         private Int32 _currentTabItemIndex;
         private TextEditor _editor;
         private FoldingManager _foldingManager;
-        private Image _connectionImage;
 
         public ViewModel()
         {
@@ -32,19 +31,6 @@ namespace NodeMCU_Studio_2015
                 {
                     _currentTabItemIndex = value;
                     OnPropertyChanged("CurrentTabItemIndex");
-                }
-            }
-        }
-
-        public Image ConnectionImage
-        {
-            get { return _connectionImage; }
-            set
-            {
-                if (value != _connectionImage)
-                {
-                    _connectionImage = value;
-                    OnPropertyChanged("ConnectionImage");
                 }
             }
         }

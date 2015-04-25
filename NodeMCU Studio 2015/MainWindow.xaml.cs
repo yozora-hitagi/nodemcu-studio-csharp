@@ -266,7 +266,7 @@ namespace NodeMCU_Studio_2015
 
         private static IEnumerable<String> ReadLinesFrom(String s)
         {
-            using (var reader = new StreamReader(s))
+            using (var reader = new StringReader(s))
             {
                 String line;
                 while ((line = reader.ReadLine()) != null)

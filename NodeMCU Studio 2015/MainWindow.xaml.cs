@@ -4,6 +4,7 @@ using System.ComponentModel.Design;
 using System.Data.SqlTypes;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Security.RightsManagement;
 using System.Text;
 using System.Threading;
@@ -39,6 +40,7 @@ namespace NodeMCU_Studio_2015
         private CompletionWindow _completionWindow;
         private TextMarkerService _textMarkerService;
         private Dispatcher _uiDispatcher;
+        private static Int32 _syntaxErrors = 0;
 
         public static readonly RoutedUICommand DownloadCommand = new RoutedUICommand();
         public static readonly RoutedUICommand UploadCommand = new RoutedUICommand();
@@ -287,6 +289,16 @@ namespace NodeMCU_Studio_2015
             {
                 MessageBox.Show("Save current file first!");
                 return;
+            }
+
+            if (_syntaxErrors > 0)
+            {
+                if (
+                    MessageBox.Show("Syntax errors found in this file. Download anyway?", "NodeMCU Studio 2015",
+                        MessageBoxButton.YesNo) == MessageBoxResult.No)
+                {
+                    return;
+                }
             }
 
             DoSerialPortAction(
@@ -544,13 +556,14 @@ namespace NodeMCU_Studio_2015
                     var tree = parser.block();
                     var visitor = new LuaVisitor();
                     newFoldings = visitor.Visit(tree);
+                    Interlocked.Exchange(ref _syntaxErrors, parser.NumberOfSyntaxErrors);
                 }
             }
             catch (Exception e)
             {
                 MessageBox.Show(e.ToString());
             }
-            
+
             return newFoldings ?? new List<NewFolding>();
         }
 

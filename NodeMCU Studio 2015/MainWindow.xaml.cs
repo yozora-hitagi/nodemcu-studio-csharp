@@ -300,8 +300,8 @@ namespace NodeMCU_Studio_2015
             var filename = CurrentTabItem.FileName;
             if (filename == null)
             {
-                MessageBox.Show("Save current file first!");
-                return;
+                if (!SaveFile())
+                    return;
             }
 
             if (_syntaxErrors > 0)
@@ -356,6 +356,11 @@ namespace NodeMCU_Studio_2015
 
         private void OnSaveExecuted(object sender, RoutedEventArgs args)
         {
+            SaveFile();
+        }
+
+        private Boolean SaveFile()
+        {
             if (CurrentTabItem.FilePath != null)
             {
                 File.WriteAllText(CurrentTabItem.FilePath, _viewModel.Editor.Text);
@@ -366,12 +371,11 @@ namespace NodeMCU_Studio_2015
                 {
                     Filter = "Lua files (*.lua)|*.lua|All files (*.*)|*.*"
                 };
-                if (dialog.ShowDialog() == true)
-                {
-                    CurrentTabItem.FilePath = dialog.FileName;
-                    File.WriteAllText(CurrentTabItem.FilePath, _viewModel.Editor.Text);
-                }
+                if (dialog.ShowDialog() != true) return false;
+                CurrentTabItem.FilePath = dialog.FileName;
+                File.WriteAllText(CurrentTabItem.FilePath, _viewModel.Editor.Text);
             }
+            return true;
         }
 
         private void OnSaveCanExecute(object sender, CanExecuteRoutedEventArgs args)

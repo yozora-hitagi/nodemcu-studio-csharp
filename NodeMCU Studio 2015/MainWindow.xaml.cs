@@ -186,7 +186,7 @@ namespace NodeMCU_Studio_2015
 
                 if (s == null)
                 {
-                    MessageBox.Show("No file selected!");
+                    MessageBox.Show("No file selected!", "NodeMCU Studio 2015", MessageBoxButton.OK, MessageBoxImage.Information, MessageBoxResult.Yes);
                     return;
                 }
 
@@ -262,7 +262,7 @@ namespace NodeMCU_Studio_2015
                     }
                     catch (Exception exception)
                     {
-                        MessageBox.Show(string.Format("Operation failed: {0}", exception));
+                        MessageBox.Show(string.Format("Operation failed: {0}", exception), "NodeMCU Studio 2015", MessageBoxButton.OK, MessageBoxImage.Error, MessageBoxResult.Yes);
                     }
 
                 }
@@ -278,7 +278,6 @@ namespace NodeMCU_Studio_2015
             var line = SerialPort.GetInstance().ExecuteWaitAndRead(command);
             if (line.Length == 2 /* \r and \n */ || line.Equals("stdin:1: open a file first\r\n"))
             {
-                //MessageBox.Show(Resources.operation_failed);
                 throw new IgnoreMeException();
             }
             callback(line);
@@ -310,7 +309,7 @@ namespace NodeMCU_Studio_2015
         {
             if (_viewModel.TabItems.Count == 0)
             {
-                MessageBox.Show("Open a file first!");
+                MessageBox.Show("Open a file first!", "NodeMCU Studio 2015", MessageBoxButton.OK, MessageBoxImage.Error, MessageBoxResult.Yes);
                 return;
             }
 
@@ -325,7 +324,7 @@ namespace NodeMCU_Studio_2015
             {
                 if (
                     MessageBox.Show("Syntax errors found in this file. Download anyway?", "NodeMCU Studio 2015",
-                        MessageBoxButton.YesNo) == MessageBoxResult.No)
+                        MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.Yes) == MessageBoxResult.No)
                 {
                     return;
                 }
@@ -338,7 +337,7 @@ namespace NodeMCU_Studio_2015
             {
                 if (
                     MessageBox.Show("Wide characters found in this file which is not supported by Lua. Download anyway?", "NodeMCU Studio 2015",
-                        MessageBoxButton.YesNo) == MessageBoxResult.No)
+                        MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.Yes) == MessageBoxResult.No)
                 {
                     return;
                 }
@@ -357,13 +356,13 @@ namespace NodeMCU_Studio_2015
                                                 Utilities.Escape(line)))))
                         {
                             SerialPort.GetInstance().ExecuteAndWait("file.close()");
-                            MessageBox.Show("Download to device failed!");
+                            MessageBox.Show("Download to device failed!", "NodeMCU Studio 2015", MessageBoxButton.OK, MessageBoxImage.Information, MessageBoxResult.Yes);
                         }
                         else
                         {
                             MessageBox.Show(!SerialPort.GetInstance().ExecuteAndWait("file.close()")
                                 ? "Download to device failed!"
-                                : "Download to device succeeded!");
+                                : "Download to device succeeded!", "NodeMCU Studio 2015", MessageBoxButton.OK, MessageBoxImage.Information, MessageBoxResult.Yes);
                         }
                     })));
         }
@@ -440,12 +439,12 @@ namespace NodeMCU_Studio_2015
         {
             if (SerialPortComboBox.SelectedItem == null)
             {
-                MessageBox.Show("Please select a serial port or plug the device first!");
+                MessageBox.Show("Please select a serial port or plug the device first!", "NodeMCU Studio 2015", MessageBoxButton.OK, MessageBoxImage.Error, MessageBoxResult.Yes);
                 return false;
             }
             else if (!SerialPort.GetInstance().Open(SerialPortComboBox.SelectedItem.ToString()))
             {
-                MessageBox.Show("Cannot open serial port!");
+                MessageBox.Show("Cannot open serial port!", "NodeMCU Studio 2015", MessageBoxButton.OK, MessageBoxImage.Error, MessageBoxResult.Yes);
                 return false;
             }
             return true;
@@ -497,7 +496,7 @@ namespace NodeMCU_Studio_2015
             {
                 if (
                     MessageBox.Show(ex.Message, "Create file failed. Retry?", MessageBoxButton.YesNo,
-                        MessageBoxImage.Error) == MessageBoxResult.Yes)
+                        MessageBoxImage.Error, MessageBoxResult.Yes) == MessageBoxResult.Yes)
                     CreateTab(fileName);
             }
         }
@@ -629,7 +628,7 @@ namespace NodeMCU_Studio_2015
             }
             catch (Exception e)
             {
-                MessageBox.Show(e.ToString());
+                MessageBox.Show(e.ToString(), "NodeMCU Studio 2015", MessageBoxButton.OK, MessageBoxImage.Error, MessageBoxResult.Yes);
             }
 
             return newFoldings ?? new List<NewFolding>();
@@ -717,7 +716,7 @@ namespace NodeMCU_Studio_2015
             {
                 var result = MessageBox.Show(
                         String.Format("File {0} not saved. Save it?", CurrentTabItem.FileName), "NodeMCU Studio 2015",
-                        MessageBoxButton.YesNoCancel);
+                        MessageBoxButton.YesNoCancel, MessageBoxImage.Question, MessageBoxResult.Yes);
                 if (result == MessageBoxResult.Yes)
                 {
                     SaveFile();
@@ -765,7 +764,7 @@ namespace NodeMCU_Studio_2015
                 {
                     var result = MessageBox.Show(
                         String.Format("File {0} not saved. Save it?", item.FileName), "NodeMCU Studio 2015",
-                        MessageBoxButton.YesNoCancel);
+                        MessageBoxButton.YesNoCancel, MessageBoxImage.Question, MessageBoxResult.Yes);
                     if (result == MessageBoxResult.Yes)
                     {
                         File.WriteAllText(item.FilePath, item.Text);

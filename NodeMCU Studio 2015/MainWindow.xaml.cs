@@ -7,6 +7,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Security.RightsManagement;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -290,11 +291,18 @@ namespace NodeMCU_Studio_2015
 
         private static IEnumerable<String> ReadLinesFrom(String s)
         {
+            var regex = new Regex("\\s*--[^[]");
             using (var reader = new StringReader(s))
             {
                 String line;
                 while ((line = reader.ReadLine()) != null)
+                {
+                    if (regex.IsMatch(line))
+                    {
+                        continue;
+                    }
                     yield return line;
+                }
             }
         } 
 
@@ -324,6 +332,8 @@ namespace NodeMCU_Studio_2015
             }
 
             var text = CurrentTabItem.Text;
+            text = Utilities.ToDBC(text);
+
             if (Encoding.Default.GetByteCount(text) != text.Length)
             {
                 if (
@@ -377,6 +387,7 @@ namespace NodeMCU_Studio_2015
         private void OnSaveExecuted(object sender, RoutedEventArgs args)
         {
             SaveFile();
+            CurrentTabItem.IsEdited = false;
         }
 
         private Boolean SaveFile()
@@ -480,6 +491,7 @@ namespace NodeMCU_Studio_2015
                 }
                 _viewModel.TabItems.Add(tabItem);
                 _viewModel.CurrentTabItemIndex = _viewModel.TabItems.Count - 1;
+                CurrentTabItem.IsEdited = false;
             }
             catch (Exception ex)
             {
@@ -506,6 +518,7 @@ namespace NodeMCU_Studio_2015
             _viewModel.Editor = editor;
             editor.Text = CurrentTabItem.Text;
             Update(CurrentTabItem.Text);
+            CurrentTabItem.IsEdited = false;
             editor.TextArea.TextEntered += TextEntered;
             editor.TextArea.TextEntering += TextEntering;
 
@@ -536,10 +549,15 @@ namespace NodeMCU_Studio_2015
                         break;
                     }
                 }
+                var s = text.Substring(index + 1, _viewModel.Editor.CaretOffset - index - 1);
                 _completionWindow = new CompletionWindow(_viewModel.Editor.TextArea) { CloseWhenCaretAtBeginning = true, StartOffset = index + 1 };
-                foreach (var item in _completionDatas)
+                foreach (var item in _completionDatas.AsParallel().Where(x => x.Text.Contains(s)))
                 {
                     _completionWindow.CompletionList.CompletionData.Add(item);
+                }
+                if (_completionWindow.CompletionList.CompletionData.Count == 0)
+                {
+                    return;
                 }
                 _completionWindow.Show();
                 _completionWindow.Closed += delegate { _completionWindow = null; };
@@ -581,7 +599,7 @@ namespace NodeMCU_Studio_2015
                 EnsureWorkInUiThread(() =>
                 {
                     var offest = _viewModel.Editor.Document.GetOffset(line, charPositionInLine);
-                    _textMarkerService.RemoveAll(m => true);
+                    //_textMarkerService.RemoveAll(m => true);
                     var marker = _textMarkerService.Create(offest, 1);
                     marker.MarkerTypes = TextMarkerTypes.SquigglyUnderline;
                     marker.MarkerColor = Colors.Red;
@@ -679,18 +697,37 @@ namespace NodeMCU_Studio_2015
         private void Editor_OnTextChanged(object sender, EventArgs e)
         {
             CurrentTabItem.Text = _viewModel.Editor.Text;
+            Update(CurrentTabItem.Text);
+            CurrentTabItem.IsEdited = true;
         }
 
         private void TabControl_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (_viewModel.Editor == null || CurrentTabItem == null) return;
 
+            Boolean oldIsEdited = CurrentTabItem.IsEdited;
             _viewModel.Editor.Text = CurrentTabItem.Text;
             Update(CurrentTabItem.Text);
+            CurrentTabItem.IsEdited = oldIsEdited;
         }
 
         private void OnCloseTab(object sender, RoutedEventArgs e)
         {
+            if (CurrentTabItem.IsEdited)
+            {
+                var result = MessageBox.Show(
+                        String.Format("File {0} not saved. Save it?", CurrentTabItem.FileName), "NodeMCU Studio 2015",
+                        MessageBoxButton.YesNoCancel);
+                if (result == MessageBoxResult.Yes)
+                {
+                    SaveFile();
+                }
+                else if (result == MessageBoxResult.Cancel)
+                {
+                    return;
+                } 
+            }
+
             var button = sender as Button;
             if (button != null)
             {
@@ -718,6 +755,27 @@ namespace NodeMCU_Studio_2015
             {
                 ExecuteWaitAndRead(text);
             });
+        }
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            foreach (var item in _viewModel.TabItems)
+            {
+                if (item.IsEdited)
+                {
+                    var result = MessageBox.Show(
+                        String.Format("File {0} not saved. Save it?", item.FileName), "NodeMCU Studio 2015",
+                        MessageBoxButton.YesNoCancel);
+                    if (result == MessageBoxResult.Yes)
+                    {
+                        File.WriteAllText(item.FilePath, item.Text);
+                    } else if (result == MessageBoxResult.Cancel)
+                    {
+                        e.Cancel = true;
+                        break;
+                    }
+                }
+            }
         }
     }
 

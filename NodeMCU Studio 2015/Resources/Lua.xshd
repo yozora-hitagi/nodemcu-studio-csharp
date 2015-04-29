@@ -30,11 +30,13 @@
 			<Begin>/(?!(\ ))</Begin>
 			<End>/</End>
 		</Span>
-		<Keywords foreground="DarkCyan">
-			<Word>class</Word>
-		</Keywords>
 		<Keywords foreground="Blue">
 			<Word>else</Word>
+      <Word>and</Word>
+      <Word>break</Word>
+      <Word>do</Word>
+      <Word>elseif</Word>
+      <Word>false</Word>
 			<Word>if</Word>
 			<Word>case</Word>
 			<Word>for</Word>
@@ -42,7 +44,16 @@
       <Word>then</Word>
       <Word>end</Word>
       <Word>function</Word>
-      <Word>self</Word>
+      <Word>goto</Word>
+      <Word>in</Word>
+      <Word>local</Word>
+      <Word>nil</Word>
+      <Word>not</Word>
+      <Word>or</Word>
+      <Word>repeat</Word>
+      <Word>return</Word>
+      <Word>true</Word>
+      <Word>until</Word>
 		</Keywords>
 	</RuleSet>
 	<RuleSet name="comments set">

@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows;
 using System.Xml;
@@ -15,10 +16,26 @@ namespace NodeMCU_Studio_2015
         private String _filePath;
         private String _text;
         private Int32 _index;
+        private Boolean _isEdited;
 
         public TabItem()
         {
             _text = "";
+            _isEdited = false;
+        }
+
+        public Boolean IsEdited
+        {
+            get { return _isEdited; }
+            set
+            {
+                _isEdited = value;
+                if (IsEdited)
+                    ShowingFileName = FileName + " *";
+                else
+                    ShowingFileName = FileName;
+                OnPropertyChanged("ShowingFileName");
+            }
         }
 
         private static IHighlightingDefinition _highlightingDefinition;
@@ -82,13 +99,22 @@ namespace NodeMCU_Studio_2015
                 {
                     _filePath = value;
                     FileName = Path.GetFileName(_filePath);
+
+                    if (IsEdited)
+                        ShowingFileName = FileName + " *";
+                    else
+                        ShowingFileName = FileName;
+
                     OnPropertyChanged("FilePath");
                     OnPropertyChanged("FileName");
+                    OnPropertyChanged("ShowingFileName");
                 }
             }
         }
 
         public String FileName { get; private set; }
+
+        public String ShowingFileName { get; private set; }
 
         public event PropertyChangedEventHandler PropertyChanged;
 

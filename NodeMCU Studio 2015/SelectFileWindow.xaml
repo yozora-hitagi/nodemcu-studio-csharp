@@ -1,11 +1,11 @@
-﻿<Window x:Class="NodeMCU_Studio_2015.UploadWindow"
+﻿<Window x:Class="NodeMCU_Studio_2015.SelectFileWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="UploadWindow" Height="150" Width="300" Icon="Resources/nodemcu.ico">
+        Title="UploadWindow" Height="175" Width="300" Icon="Resources/nodemcu.ico">
     <StackPanel Orientation="Vertical">
         <Label Content="Choose the file you want to upload:" HorizontalAlignment="Center" VerticalAlignment="Top" />
         <ComboBox HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,20" Width="200" x:Name="FileListComboBox" x:FieldModifier="public"/>
-        <Button Content="Upload" Margin="20,5" x:Name="UploadButton" x:FieldModifier="public"/>
+        <Button Margin="20,5" x:Name="SelectButton" x:FieldModifier="public"/>
         
     </StackPanel>
 </Window>

@@ -44,13 +44,16 @@ namespace NodeMCU_Studio_2015
         private TextMarkerService _textMarkerService;
         private Dispatcher _uiDispatcher;
         private static Int32 _syntaxErrors = 0;
-        private Image _disconnectedImage;
-        private Image _connectedImage;
-        private Image _disconnectedImageMenuItem;
-        private Image _connectedImageMenuItem;
+        private readonly Image _disconnectedImage;
+        private readonly Image _connectedImage;
+        private readonly Image _disconnectedImageMenuItem;
+        private readonly Image _connectedImageMenuItem;
 
         public static readonly RoutedUICommand DownloadCommand = new RoutedUICommand();
         public static readonly RoutedUICommand UploadCommand = new RoutedUICommand();
+        public static readonly RoutedUICommand RunCommand = new RoutedUICommand();
+        public static readonly RoutedUICommand DeleteCommand = new RoutedUICommand();
+        public static readonly RoutedUICommand CompileCommand = new RoutedUICommand();
 
         public MainWindow()
         {
@@ -104,8 +107,8 @@ namespace NodeMCU_Studio_2015
             {
                 EnsureWorkInUiThread(() =>
                 {
-                    ConnectButton.IsEnabled = CommandTextBox.IsEnabled = UploadButton.IsEnabled = DownloadButton.IsEnabled = !isWorking;
-                    ConnectMenuItem.IsEnabled = UploadMenuItem.IsEnabled = DownloadMenuItem.IsEnabled = !isWorking;
+                    CompileButton.IsEnabled = DeleteButton.IsEnabled = RunButton.IsEnabled = ConnectButton.IsEnabled = CommandTextBox.IsEnabled = UploadButton.IsEnabled = DownloadButton.IsEnabled = !isWorking;
+                    CompileMenuItem.IsEnabled = DeleteMenuItem.IsEnabled = RunMenuItem.IsEnabled = ConnectMenuItem.IsEnabled = UploadMenuItem.IsEnabled = DownloadMenuItem.IsEnabled = !isWorking;
                 });
             };
 
@@ -167,9 +170,9 @@ namespace NodeMCU_Studio_2015
             CreateTab(null);
         }
 
-        private void OnUploadExecuted(object sender, RoutedEventArgs args)
+        private void SelectAndDoAction(string name, Action<string> callback)
         {
-            var window = new UploadWindow();
+            var window = new SelectFileWindow { SelectButton = { Content = name } };
             var result = "";
 
             DoSerialPortAction(
@@ -177,9 +180,13 @@ namespace NodeMCU_Studio_2015
                 {
                     ExecuteWaitAndRead("for k, v in pairs(file.list()) do", _ =>
                         ExecuteWaitAndRead("print(k)", __ => ExecuteWaitAndRead("end", str => { result = str; })));
-                }, () => { window.FileListComboBox.ItemsSource = result.Replace("\r","").Split('\n'); });
+                }, () =>
+                {
+                    window.FileListComboBox.ItemsSource = result.Replace("\r", "").Split('\n').Where(s => !String.IsNullOrEmpty(s));
+                    window.FileListComboBox.SelectedIndex = 0;
+                });
 
-            window.UploadButton.Click += delegate
+            window.SelectButton.Click += delegate
             {
                 window.Close();
                 var s = window.FileListComboBox.SelectedItem as String;
@@ -190,6 +197,51 @@ namespace NodeMCU_Studio_2015
                     return;
                 }
 
+                callback(s);
+            };
+
+            if (SerialPort.GetInstance().CurrentSp.IsOpen)
+            {
+                window.ShowDialog();
+            }
+            else
+            {
+                window.Close();
+            }
+        }
+
+        private void OnRunExecuted(object sender, RoutedEventArgs args)
+        {
+            SelectAndDoAction("Run", (s) =>
+            {
+                DoSerialPortAction(
+                    () => ExecuteWaitAndRead(string.Format("dofile(\"{0}\")", Utilities.Escape(s))));
+            });
+        }
+
+        private void OnCompileExecuted(object sender, RoutedEventArgs args)
+        {
+            SelectAndDoAction("Compile", (s) =>
+            {
+                DoSerialPortAction(
+                    () => ExecuteWaitAndRead(string.Format("node.compile(\"{0}\")", Utilities.Escape(s))));
+            });
+        }
+
+        private void OnDeleteExecuted(object sender, RoutedEventArgs args)
+        {
+            SelectAndDoAction("Delete", (s) =>
+            {
+                DoSerialPortAction(
+                    () => ExecuteWaitAndRead(string.Format("file.remove(\"{0}\")", Utilities.Escape(s))));
+            });
+        }
+
+
+        private void OnUploadExecuted(object sender, RoutedEventArgs args)
+        {
+            SelectAndDoAction("Upload", (s) =>
+            {
                 var res = "";
 
                 DoSerialPortAction(
@@ -220,18 +272,7 @@ namespace NodeMCU_Studio_2015
                     CreateTab(null);
                     CurrentTabItem.Text = res;
                 });
-
-            };
-
-            if (SerialPort.GetInstance().CurrentSp.IsOpen)
-            {
-                window.ShowDialog();
-            }
-            else
-            {
-                window.Close();
-            }
-            
+            });
         }
 
         private void DoSerialPortAction(Action callback)
@@ -753,6 +794,9 @@ namespace NodeMCU_Studio_2015
             DoSerialPortAction(() =>
             {
                 ExecuteWaitAndRead(text);
+            }, () =>
+            {
+                CommandTextBox.Focus();
             });
         }
 

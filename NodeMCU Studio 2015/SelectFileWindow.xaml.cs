@@ -14,11 +14,11 @@ using System.Windows.Shapes;
 namespace NodeMCU_Studio_2015
 {
     /// <summary>
-    /// Interaction logic for UploadWindow.xaml
+    /// Interaction logic for SelectFileWindow.xaml
     /// </summary>
-    public partial class UploadWindow : Window
+    public partial class SelectFileWindow : Window
     {
-        public UploadWindow()
+        public SelectFileWindow()
         {
             InitializeComponent();
         }

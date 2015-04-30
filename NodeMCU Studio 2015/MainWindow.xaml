@@ -16,6 +16,9 @@
         <Image Source="Resources/connected.png" x:Key="ConnectedImageMenuItem" Height="19" x:Shared="False"/>
         <Image Source="Resources/download.png" x:Key="DownloadImage" Height="19" x:Shared="False"/>
         <Image Source="Resources/upload.png" x:Key="UploadImage" Height="19" x:Shared="False"/>
+        <Image Source="Resources/run.png" x:Key="RunImage" Height="19" x:Shared="False"/>
+        <Image Source="Resources/close.png" x:Key="DeleteImage" Height="19" x:Shared="False"/>
+        <Image Source="Resources/compile.png" x:Key="CompileImage" Height="19" x:Shared="False"/>
     </Window.Resources>
     <Window.CommandBindings>
         <CommandBinding Command="New" Executed="OnNewExecuted" />
@@ -24,6 +27,9 @@
         <CommandBinding Command="Refresh" Executed="OnRefreshExecuted" />
         <CommandBinding Command="local:MainWindow.DownloadCommand" Executed="OnDownloadExecuted" />
         <CommandBinding Command="local:MainWindow.UploadCommand" Executed="OnUploadExecuted" />
+        <CommandBinding Command="local:MainWindow.RunCommand" Executed="OnRunExecuted" />
+        <CommandBinding Command="local:MainWindow.DeleteCommand" Executed="OnDeleteExecuted" />
+        <CommandBinding Command="local:MainWindow.CompileCommand" Executed="OnCompileExecuted" />
     </Window.CommandBindings>
     <Window.InputBindings>
         <KeyBinding Modifiers="Control" Key="S" Command="Save" />
@@ -39,7 +45,7 @@
             <RowDefinition Height="25" />
             <RowDefinition Height="*" />
             <RowDefinition Height="150" />
-            <RowDefinition Height="20" />
+            <RowDefinition Height="25" />
             <RowDefinition Height="25" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
@@ -57,6 +63,9 @@
                 <MenuItem Header="Connect" Click="OnToggleConnect" x:Name="ConnectMenuItem" />
                 <MenuItem Header="Download" Icon="{StaticResource DownloadImage}" Command="local:MainWindow.DownloadCommand" x:Name="DownloadMenuItem"/>
                 <MenuItem Header="Upload" Icon="{StaticResource UploadImage}" Command="local:MainWindow.UploadCommand" x:Name="UploadMenuItem"/>
+                <MenuItem Header="Run" Icon="{StaticResource RunImage}" Command="local:MainWindow.RunCommand" x:Name="RunMenuItem"/>
+                <MenuItem Header="Upload" Icon="{StaticResource UploadImage}" Command="local:MainWindow.DeleteCommand" x:Name="DeleteMenuItem"/>
+                <MenuItem Header="Compile" Icon="{StaticResource CompileImage}" Command="local:MainWindow.CompileCommand" x:Name="CompileMenuItem"/>
             </MenuItem>
         </Menu>
         <ToolBarTray Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" IsLocked="True">
@@ -71,6 +80,9 @@
                 <Button Click="OnToggleConnect" x:Name="ConnectButton" />
                 <Button Content="{StaticResource DownloadImage}" Command="local:MainWindow.DownloadCommand" x:Name="DownloadButton"/>
                 <Button Content="{StaticResource UploadImage}" Command="local:MainWindow.UploadCommand" x:Name="UploadButton"/>
+                <Button Content="{StaticResource RunImage}" Command="local:MainWindow.RunCommand" x:Name="RunButton"/>
+                <Button Content="{StaticResource DeleteImage}" Command="local:MainWindow.DeleteCommand" x:Name="DeleteButton"/>
+                <Button Content="{StaticResource CompileImage}" Command="local:MainWindow.CompileCommand" x:Name="CompileButton"/>
             </ToolBar>
         </ToolBarTray>
         <TabControl Grid.Row="2" Grid.Column="1" x:Name="TabControl" ItemsSource="{Binding TabItems}" SelectedIndex="{Binding CurrentTabItemIndex}" SelectionChanged="TabControl_OnSelectionChanged">

@@ -1,27 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.ComponentModel.Design;
-using System.Data.SqlTypes;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Security.RightsManagement;
+using System.Net;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Media.TextFormatting;
 using System.Windows.Threading;
 using Antlr4.Runtime;
-using Antlr4.Runtime.Atn;
-using Antlr4.Runtime.Dfa;
-using Antlr4.Runtime.Sharpen;
 using ICSharpCode.AvalonEdit;
 using ICSharpCode.AvalonEdit.CodeCompletion;
 using ICSharpCode.AvalonEdit.Folding;
@@ -44,10 +39,10 @@ namespace NodeMCU_Studio_2015
         private TextMarkerService _textMarkerService;
         private Dispatcher _uiDispatcher;
         private static Int32 _syntaxErrors = 0;
-        private readonly Image _disconnectedImage;
-        private readonly Image _connectedImage;
-        private readonly Image _disconnectedImageMenuItem;
-        private readonly Image _connectedImageMenuItem;
+        private Image _disconnectedImage;
+        private Image _connectedImage;
+        private Image _disconnectedImageMenuItem;
+        private Image _connectedImageMenuItem;
         private volatile String _backgroundThreadParam = "";
         private AutoResetEvent _backgroundThreadEvent = new AutoResetEvent(false);
 
@@ -78,32 +73,7 @@ namespace NodeMCU_Studio_2015
 
             RefreshSerialPort();
 
-            // for a toolbar and menu bug...
-            _disconnectedImage = Resources["DisconnectedImage"] as Image;
-            _disconnectedImageMenuItem = Resources["DisconnectedImageMenuItem"] as Image;
-
-            _connectedImage = Resources["ConnectedImage"] as Image;
-            _connectedImageMenuItem = Resources["ConnectedImageMenuItem"] as Image;
-
-            ConnectButton.Content = _disconnectedImage;
-            ConnectMenuItem.Icon = _disconnectedImageMenuItem;
-
-            SerialPort.GetInstance().IsOpenChanged += delegate (bool isOpen)
-            {
-                EnsureWorkInUiThread(() =>
-                {
-                    if (isOpen)
-                    {
-                        ConnectButton.Content = _connectedImage;
-                        ConnectMenuItem.Icon = _connectedImageMenuItem;
-                    }
-                    else
-                    {
-                        ConnectButton.Content = _disconnectedImage;
-                        ConnectMenuItem.Icon = _disconnectedImageMenuItem;
-                    }
-                });
-            };
+            InitConnect();
 
             SerialPort.GetInstance().IsWorkingChanged += delegate(bool isWorking)
             {
@@ -123,6 +93,69 @@ namespace NodeMCU_Studio_2015
                 });
             };
 
+            StartBackgroundSerialPortUpdateThread();
+
+            StartBackgroundUpdateThread();
+
+            new Task(() =>
+            {
+                const string updateLink = "http://nodemcu-studio-2015.coding.io/pre_build/Release/NodeMCU%20Studio%202015.exe";
+                var req =
+                    WebRequest.Create(
+                        updateLink);
+                req.Method = "HEAD";
+
+                using (var resp = req.GetResponse())
+                {
+                    Int32 contentLength;
+                    if (Int32.TryParse(resp.Headers.Get("Content-Length"), out contentLength))
+                    {
+                        var fileLength = new FileInfo(Assembly.GetExecutingAssembly().Location).Length;
+                        if (fileLength != contentLength)
+                        {
+                            if (MessageBox.Show("A new version is available. Download?", "NodeMCU Studio 2015",
+                                MessageBoxButton.YesNo, MessageBoxImage.Information, MessageBoxResult.Yes) == MessageBoxResult.Yes)
+                            {
+                                Process.Start(updateLink);
+                            }
+                        }
+                    }
+                }
+            }).Start();
+        }
+
+        private void InitConnect()
+        {
+            // for a toolbar and menu bug...
+            _disconnectedImage = Resources["DisconnectedImage"] as Image;
+            _disconnectedImageMenuItem = Resources["DisconnectedImageMenuItem"] as Image;
+
+            _connectedImage = Resources["ConnectedImage"] as Image;
+            _connectedImageMenuItem = Resources["ConnectedImageMenuItem"] as Image;
+
+            ConnectButton.Content = _disconnectedImage;
+            ConnectMenuItem.Icon = _disconnectedImageMenuItem;
+
+            SerialPort.GetInstance().IsOpenChanged += delegate(bool isOpen)
+            {
+                EnsureWorkInUiThread(() =>
+                {
+                    if (isOpen)
+                    {
+                        ConnectButton.Content = _connectedImage;
+                        ConnectMenuItem.Icon = _connectedImageMenuItem;
+                    }
+                    else
+                    {
+                        ConnectButton.Content = _disconnectedImage;
+                        ConnectMenuItem.Icon = _disconnectedImageMenuItem;
+                    }
+                });
+            };
+        }
+
+        private static void StartBackgroundSerialPortUpdateThread()
+        {
             new Task(() =>
             {
                 while (true)
@@ -139,7 +172,10 @@ namespace NodeMCU_Studio_2015
                     Thread.Sleep(1000);
                 }
             }).Start();
+        }
 
+        private void StartBackgroundUpdateThread()
+        {
             new Task(() =>
             {
                 while (true)
@@ -203,7 +239,7 @@ namespace NodeMCU_Studio_2015
 
         private static void EnsureWorkInUiThread(Action action)
         {
-            var dispatcher = System.Windows.Threading.Dispatcher.FromThread(Thread.CurrentThread);
+            var dispatcher = Dispatcher.FromThread(Thread.CurrentThread);
             if (dispatcher != null)
             {
                 action();
@@ -373,7 +409,7 @@ namespace NodeMCU_Studio_2015
 
             task.ContinueWith(_ =>
             {
-                if (System.Windows.Application.Current.Windows.Count == 1)
+                if (Application.Current.Windows.Count == 1)
                 {
                     Activate();
                 }
@@ -854,7 +890,7 @@ namespace NodeMCU_Studio_2015
             });
         }
 
-        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        private void Window_Closing(object sender, CancelEventArgs e)
         {
             foreach (var item in _viewModel.TabItems)
             {

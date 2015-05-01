@@ -152,7 +152,7 @@ namespace NodeMCU_Studio_2015
 
                     var newFoldings = CreateNewFoldings(text, ref markerPositions);
 
-                    for (Int32 i = 0; i < text.Length; i++)
+                    for (var i = 0; i < text.Length; i++)
                     {
                         if (text[i] > 255)
                         {
@@ -373,7 +373,10 @@ namespace NodeMCU_Studio_2015
 
             task.ContinueWith(_ =>
             {
-                Activate();
+                if (System.Windows.Application.Current.Windows.Count == 1)
+                {
+                    Activate();
+                }
                 cleanup();
             }, TaskScheduler.FromCurrentSynchronizationContext());
             task.Start();

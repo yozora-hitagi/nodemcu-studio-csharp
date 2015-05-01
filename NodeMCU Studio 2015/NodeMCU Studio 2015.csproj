@@ -103,6 +103,7 @@
     </Compile>
     <Compile Include="Properties\Annotations.cs" />
     <Compile Include="SerialPort.cs" />
+    <Compile Include="SmartObservableCollection.cs" />
     <Compile Include="StartScreen.xaml.cs">
       <DependentUpon>StartScreen.xaml</DependentUpon>
     </Compile>

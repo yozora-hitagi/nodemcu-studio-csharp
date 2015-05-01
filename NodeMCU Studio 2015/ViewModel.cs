@@ -11,7 +11,7 @@ namespace NodeMCU_Studio_2015
     public sealed class ViewModel : INotifyPropertyChanged
     {
         private ObservableCollection<TabItem> _tabItems;
-        private ObservableCollection<NewFolding> _functions; 
+        private SmartObservableCollection<NewFolding> _functions; 
         private Int32 _currentTabItemIndex;
         private TextEditor _editor;
         private FoldingManager _foldingManager;
@@ -19,7 +19,7 @@ namespace NodeMCU_Studio_2015
         public ViewModel()
         {
             _tabItems = new ObservableCollection<TabItem>();
-            _functions = new ObservableCollection<NewFolding>();
+            _functions = new SmartObservableCollection<NewFolding>();
         }
 
         public Int32 CurrentTabItemIndex
@@ -61,7 +61,7 @@ namespace NodeMCU_Studio_2015
             }
         }
 
-        public ObservableCollection<NewFolding> Functions
+        public SmartObservableCollection<NewFolding> Functions
         {
             get { return _functions; }
             set

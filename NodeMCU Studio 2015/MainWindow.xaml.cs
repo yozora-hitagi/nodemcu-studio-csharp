@@ -48,6 +48,8 @@ namespace NodeMCU_Studio_2015
         private readonly Image _connectedImage;
         private readonly Image _disconnectedImageMenuItem;
         private readonly Image _connectedImageMenuItem;
+        private volatile String _backgroundThreadParam = "";
+        private AutoResetEvent _backgroundThreadEvent = new AutoResetEvent(false);
 
         public static readonly RoutedUICommand DownloadCommand = new RoutedUICommand();
         public static readonly RoutedUICommand UploadCommand = new RoutedUICommand();
@@ -138,6 +140,65 @@ namespace NodeMCU_Studio_2015
                 }
             }).Start();
 
+            new Task(() =>
+            {
+                while (true)
+                {
+                    _backgroundThreadEvent.WaitOne();
+                    var text = _backgroundThreadParam;
+
+                    var markers = new List<Int32>();
+                    var markerPositions = new List<MarkerPosition>();
+
+                    var newFoldings = CreateNewFoldings(text, ref markerPositions);
+
+                    for (Int32 i = 0; i < text.Length; i++)
+                    {
+                        if (text[i] > 255)
+                        {
+                            markers.Add(i);
+                        }
+                    }
+
+                    EnsureWorkInUiThread(() =>
+                    {
+                        if (_textMarkerService != null)
+                            _textMarkerService.RemoveAll(m => true);
+                        _viewModel.Functions.Reset(newFoldings);
+                        _viewModel.FoldingManager.UpdateFoldings(newFoldings, -1);
+
+                        foreach (var offest in markers)
+                        {
+                            if (_textMarkerService != null)
+                            {
+                                var marker = _textMarkerService.Create(offest, 1);
+                                marker.MarkerTypes = TextMarkerTypes.SquigglyUnderline;
+                                marker.MarkerColor = Colors.Red;
+                            }
+                        }
+
+                        foreach (var position in markerPositions)
+                        {
+                            var offest = _viewModel.Editor.Document.GetOffset(position.Line, position.Position);
+                            if (offest >= _viewModel.Editor.Text.Length)
+                                offest = _viewModel.Editor.Text.Length - 1;
+                            if (_textMarkerService != null)
+                            {
+                                var marker = _textMarkerService.Create(offest, 1);
+                                marker.MarkerTypes = TextMarkerTypes.SquigglyUnderline;
+                                marker.MarkerColor = Colors.Red;
+                            }
+                        }
+                    });
+                }
+            }).Start();
+        }
+
+        private void Update(string text)
+        {
+            _backgroundThreadParam = text;
+            _backgroundThreadEvent.Set();
+            
         }
 
         private static void EnsureWorkInUiThread(Action action)
@@ -310,7 +371,11 @@ namespace NodeMCU_Studio_2015
                 SerialPort.GetInstance().FireIsWorkingChanged(false);
             });
 
-            task.ContinueWith(_ => cleanup(), TaskScheduler.FromCurrentSynchronizationContext());
+            task.ContinueWith(_ =>
+            {
+                Activate();
+                cleanup();
+            }, TaskScheduler.FromCurrentSynchronizationContext());
             task.Start();
         }
 
@@ -401,9 +466,10 @@ namespace NodeMCU_Studio_2015
                         }
                         else
                         {
-                            MessageBox.Show(!SerialPort.GetInstance().ExecuteAndWait("file.close()")
-                                ? "Download to device failed!"
-                                : "Download to device succeeded!", "NodeMCU Studio 2015", MessageBoxButton.OK, MessageBoxImage.Information, MessageBoxResult.Yes);
+                            if (!SerialPort.GetInstance().ExecuteAndWait("file.close()"))
+                            {
+                                MessageBox.Show("Download to device succeeded!", "NodeMCU Studio 2015", MessageBoxButton.OK, MessageBoxImage.Information, MessageBoxResult.Yes);
+                            }
                         }
                     })));
         }
@@ -605,50 +671,35 @@ namespace NodeMCU_Studio_2015
             Update(text);
         }
 
-        // Potential in multithread? 
-        private void Update(string text)
-        {
-            if (_textMarkerService != null)
-                _textMarkerService.RemoveAll(m => true);
-
-            ThreadPool.QueueUserWorkItem(delegate
-            {
-                var newFoldings = CreateNewFoldings(text);
-                EnsureWorkInUiThread(() =>
-                {
-                    _viewModel.Functions.Clear();
-                    foreach (var folding in newFoldings)
-                    {
-                        _viewModel.Functions.Add(folding);
-                    }
-                    _viewModel.FoldingManager.UpdateFoldings(newFoldings, -1);
-                });
-            });
-        }
-
         private class MyErrorListener : BaseErrorListener
         {
             private readonly TextMarkerService _textMarkerService;
-            public MyErrorListener(TextMarkerService service)
+            private readonly List<MarkerPosition> _markers; 
+            public MyErrorListener(TextMarkerService service, ref List<MarkerPosition> markers)
             {
                 _textMarkerService = service;
+                _markers = markers;
             }
 
             public override void SyntaxError(IRecognizer recognizer, IToken offendingSymbol, int line, int charPositionInLine, string msg, RecognitionException recognitionException)
             {
-                EnsureWorkInUiThread(() =>
-                {
-                    var offest = _viewModel.Editor.Document.GetOffset(line, charPositionInLine);
-                    //_textMarkerService.RemoveAll(m => true);
-                    var marker = _textMarkerService.Create(offest, 1);
-                    marker.MarkerTypes = TextMarkerTypes.SquigglyUnderline;
-                    marker.MarkerColor = Colors.Red;
-                });
-                
+                _markers.Add(new MarkerPosition(line, charPositionInLine));
             }
         }
 
-        private List<NewFolding> CreateNewFoldings(String text)
+        private struct MarkerPosition
+        {
+            public Int32 Line;
+            public Int32 Position;
+
+            public MarkerPosition(int line, int position)
+            {
+                Line = line;
+                Position = position;
+            }
+        }
+
+        private List<NewFolding> CreateNewFoldings(String text, ref List<MarkerPosition> markers)
         {
             List<NewFolding> newFoldings = null;
             try
@@ -660,7 +711,7 @@ namespace NodeMCU_Studio_2015
                     var tokens = new CommonTokenStream(lexer);
                     var parser = new LuaParser(tokens) {BuildParseTree = true};
                     parser.RemoveErrorListeners();
-                    parser.AddErrorListener(new MyErrorListener(_textMarkerService));
+                    parser.AddErrorListener(new MyErrorListener(_textMarkerService, ref markers));
                     var tree = parser.block();
                     var visitor = new LuaVisitor();
                     newFoldings = visitor.Visit(tree);

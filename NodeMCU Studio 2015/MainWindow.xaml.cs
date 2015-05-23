@@ -116,7 +116,8 @@ namespace NodeMCU_Studio_2015
                             if (MessageBox.Show("A new version is available. Download?", "NodeMCU Studio 2015",
                                 MessageBoxButton.YesNo, MessageBoxImage.Information, MessageBoxResult.Yes) == MessageBoxResult.Yes)
                             {
-                                Process.Start(updateLink);
+                                Process.Start("NodeMcu Updataer.exe");
+
                             }
                         }
                     }
@@ -759,7 +760,8 @@ namespace NodeMCU_Studio_2015
             }
             catch (Exception e)
             {
-                MessageBox.Show(e.ToString(), "NodeMCU Studio 2015", MessageBoxButton.OK, MessageBoxImage.Error, MessageBoxResult.Yes);
+               // MessageBox.Show(e.ToString(), "NodeMCU Studio 2015", MessageBoxButton.OK, MessageBoxImage.Error, MessageBoxResult.Yes);
+               //On error resume next
             }
 
             return newFoldings ?? new List<NewFolding>();

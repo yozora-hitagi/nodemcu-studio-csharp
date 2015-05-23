@@ -99,7 +99,7 @@ namespace NodeMCU_Studio_2015
 
             new Task(() =>
             {
-                const string updateLink = "http://nodemcu-studio-2015.coding.io/pre_build/Release/NodeMCU%20Studio%202015.exe";
+                const string updateLink = "http://nodemcu-studio-2015.coding.io/pre_build/NodeMCU%20Studio%202015.exe";
                 var req =
                     WebRequest.Create(
                         updateLink);

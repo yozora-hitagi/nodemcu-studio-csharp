@@ -46,7 +46,7 @@ namespace NodeMcu_Updataer
 
            percent = 0;
 
-           string URL = "http://nodemcu-studio-2015.coding.io/pre_build/Release/NodeMCU%20Studio%202015.exe";
+           string URL = "http://nodemcu-studio-2015.coding.io/pre_build/NodeMCU%20Studio%202015.exe";
            Binding bind = new Binding();
            timer.Interval = TimeSpan.FromMilliseconds(100);
            timer.Tick += new EventHandler(ui_udp);

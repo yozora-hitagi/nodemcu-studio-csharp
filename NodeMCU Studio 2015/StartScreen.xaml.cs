@@ -14,7 +14,7 @@ namespace NodeMCU_Studio_2015
             var context = SynchronizationContext.Current;
 
             new Task(() => {
-                Thread.Sleep(1000);
+              //  Thread.Sleep(1000);
 
                 context.Post(_ =>
                 {

@@ -97,32 +97,32 @@ namespace NodeMCU_Studio_2015
 
             StartBackgroundUpdateThread();
 
-            new Task(() =>
-            {
-                const string updateLink = "http://nodemcu-studio-2015.coding.io/pre_build/NodeMCU%20Studio%202015.exe";
-                var req =
-                    WebRequest.Create(
-                        updateLink);
-                req.Method = "HEAD";
+            //new Task(() =>
+            //{
+            //    const string updateLink = "http://nodemcu-studio-2015.coding.io/pre_build/NodeMCU%20Studio%202015.exe";
+            //    var req =
+            //        WebRequest.Create(
+            //            updateLink);
+            //    req.Method = "HEAD";
 
-                using (var resp = req.GetResponse())
-                {
-                    Int32 contentLength;
-                    if (Int32.TryParse(resp.Headers.Get("Content-Length"), out contentLength))
-                    {
-                        var fileLength = new FileInfo(Assembly.GetExecutingAssembly().Location).Length;
-                        if (fileLength != contentLength)
-                        {
-                            if (MessageBox.Show("A new version is available. Download?", "NodeMCU Studio 2015",
-                                MessageBoxButton.YesNo, MessageBoxImage.Information, MessageBoxResult.Yes) == MessageBoxResult.Yes)
-                            {
-                                Process.Start("NodeMcu Updataer.exe");
+            //    using (var resp = req.GetResponse())
+            //    {
+            //        Int32 contentLength;
+            //        if (Int32.TryParse(resp.Headers.Get("Content-Length"), out contentLength))
+            //        {
+            //            var fileLength = new FileInfo(Assembly.GetExecutingAssembly().Location).Length;
+            //            if (fileLength != contentLength)
+            //            {
+            //                if (MessageBox.Show("A new version is available. Download?", "NodeMCU Studio 2015",
+            //                    MessageBoxButton.YesNo, MessageBoxImage.Information, MessageBoxResult.Yes) == MessageBoxResult.Yes)
+            //                {
+            //                    Process.Start("NodeMcu Updataer.exe");
 
-                            }
-                        }
-                    }
-                }
-            }).Start();
+            //                }
+            //            }
+            //        }
+            //    }
+            //}).Start();
         }
 
         private void InitConnect()

@@ -64,7 +64,7 @@
                 <MenuItem Header="Download" Icon="{StaticResource DownloadImage}" Command="local:MainWindow.DownloadCommand" x:Name="DownloadMenuItem"/>
                 <MenuItem Header="Upload" Icon="{StaticResource UploadImage}" Command="local:MainWindow.UploadCommand" x:Name="UploadMenuItem"/>
                 <MenuItem Header="Run" Icon="{StaticResource RunImage}" Command="local:MainWindow.RunCommand" x:Name="RunMenuItem"/>
-                <MenuItem Header="Upload" Icon="{StaticResource UploadImage}" Command="local:MainWindow.DeleteCommand" x:Name="DeleteMenuItem"/>
+                <MenuItem Header="Delete" Icon="{StaticResource DeleteImage}" Command="local:MainWindow.DeleteCommand" x:Name="DeleteMenuItem"/>
                 <MenuItem Header="Compile" Icon="{StaticResource CompileImage}" Command="local:MainWindow.CompileCommand" x:Name="CompileMenuItem"/>
             </MenuItem>
         </Menu>

@@ -75,7 +75,7 @@ namespace NodeMCU_Studio_2015
 
             InitConnect();
 
-            SerialPort.GetInstance().IsWorkingChanged += delegate(bool isWorking)
+            SerialPort.GetInstance().IsWorkingChanged += delegate (bool isWorking)
             {
                 EnsureWorkInUiThread(() =>
                 {
@@ -84,7 +84,7 @@ namespace NodeMCU_Studio_2015
                 });
             };
 
-            SerialPort.GetInstance().OnDataReceived += delegate(string data)
+            SerialPort.GetInstance().OnDataReceived += delegate (string data)
             {
                 EnsureWorkInUiThread(() =>
                 {
@@ -137,7 +137,7 @@ namespace NodeMCU_Studio_2015
             ConnectButton.Content = _disconnectedImage;
             ConnectMenuItem.Icon = _disconnectedImageMenuItem;
 
-            SerialPort.GetInstance().IsOpenChanged += delegate(bool isOpen)
+            SerialPort.GetInstance().IsOpenChanged += delegate (bool isOpen)
             {
                 EnsureWorkInUiThread(() =>
                 {
@@ -145,11 +145,15 @@ namespace NodeMCU_Studio_2015
                     {
                         ConnectButton.Content = _connectedImage;
                         ConnectMenuItem.Icon = _connectedImageMenuItem;
+
+                        SerialPortComboBox.IsEnabled = false;
                     }
                     else
                     {
                         ConnectButton.Content = _disconnectedImage;
                         ConnectMenuItem.Icon = _disconnectedImageMenuItem;
+
+                        SerialPortComboBox.IsEnabled = true;
                     }
                 });
             };
@@ -235,7 +239,7 @@ namespace NodeMCU_Studio_2015
         {
             _backgroundThreadParam = text;
             _backgroundThreadEvent.Set();
-            
+
         }
 
         private static void EnsureWorkInUiThread(Action action)
@@ -244,7 +248,8 @@ namespace NodeMCU_Studio_2015
             if (dispatcher != null)
             {
                 action();
-            } else
+            }
+            else
             {
                 new Task(action).Start(_uiThreadScheduler);
             }
@@ -265,7 +270,7 @@ namespace NodeMCU_Studio_2015
 
         private void OnNewExecuted(object sender, RoutedEventArgs args)
         {
-            CreateTab(null);
+            CreateTab(null, null);
         }
 
         private void SelectAndDoAction(string name, Action<string> callback)
@@ -367,7 +372,7 @@ namespace NodeMCU_Studio_2015
 
                 }), () =>
                 {
-                    CreateTab(null);
+                    CreateTab(null,res);
                     CurrentTabItem.Text = res;
                 });
             });
@@ -422,7 +427,8 @@ namespace NodeMCU_Studio_2015
         private static void ExecuteWaitAndRead(string command, Action<string> callback)
         {
             var line = SerialPort.GetInstance().ExecuteWaitAndRead(command);
-            if (line.Length == 2 /* \r and \n */ || line.Equals("stdin:1: open a file first\r\n"))
+            //ExecuteWaitAndRead 中str的处理逻辑做了修改，这里可能有问题。 了解清楚什么意思之前暂不修改。
+            if (line.Length == 0 /* \r and \n */ || line.Equals("stdin:1: open a file first\r\n"))
             {
                 throw new IgnoreMeException();
             }
@@ -436,20 +442,20 @@ namespace NodeMCU_Studio_2015
 
         private static IEnumerable<String> ReadLinesFrom(String s)
         {
-            var regex = new Regex("\\s*--[^[]");
+           // var regex = new Regex("\\s*--[^[]");
             using (var reader = new StringReader(s))
             {
                 String line;
                 while ((line = reader.ReadLine()) != null)
                 {
-                    if (regex.IsMatch(line))
-                    {
-                        continue;
-                    }
+                    //if (regex.IsMatch(line))
+                    //{
+                    //    continue;
+                    //}
                     yield return line;
                 }
             }
-        } 
+        }
 
         private void OnDownloadExecuted(object sender, RoutedEventArgs args)
         {
@@ -464,6 +470,8 @@ namespace NodeMCU_Studio_2015
             {
                 if (!SaveFile())
                     return;
+                else
+                    filename = CurrentTabItem.FileName;
             }
 
             if (_syntaxErrors > 0)
@@ -526,7 +534,7 @@ namespace NodeMCU_Studio_2015
             if (dialog.ShowDialog() == true)
             {
                 foreach (var filename in dialog.FileNames)
-                    CreateTab(filename);
+                    CreateTab(filename,null);
             }
         }
 
@@ -558,8 +566,8 @@ namespace NodeMCU_Studio_2015
         private void OnSaveCanExecute(object sender, CanExecuteRoutedEventArgs args)
         {
             args.CanExecute = false;
-            if (_viewModel != null) 
-                    args.CanExecute = _viewModel.TabItems.Count != 0;
+            if (_viewModel != null)
+                args.CanExecute = _viewModel.TabItems.Count != 0;
         }
 
         private void OnCopy()
@@ -617,10 +625,32 @@ namespace NodeMCU_Studio_2015
                 SerialPortComboBox.ItemsSource = source;
                 SerialPortComboBox.IsEnabled = false;
             }
+
             SerialPortComboBox.SelectedIndex = 0;
+
+            foreach (var port in ports)
+            {
+                if (SerialPort.GetInstance().Open(port))
+                {
+                    try
+                    {
+                        var line = SerialPort.GetInstance().ExecuteWaitAndRead("print(\"test\")");
+                        if(line.Equals("test"))
+                        {
+                            SerialPortComboBox.SelectedValue = port;
+                            break;
+                        }
+                    }
+                    finally
+                    {
+                        SerialPort.GetInstance().Close();
+                    }
+                }
+            }
+
         }
 
-        private void CreateTab(string fileName)
+        private void CreateTab(string fileName,string content)
         {
             try
             {
@@ -635,16 +665,23 @@ namespace NodeMCU_Studio_2015
                     // Maybe some better way is needed.
                     tabItem.Text = File.ReadAllText(fileName);
                 }
+
                 _viewModel.TabItems.Add(tabItem);
                 _viewModel.CurrentTabItemIndex = _viewModel.TabItems.Count - 1;
                 CurrentTabItem.IsEdited = false;
+
+                if (content != null)
+                {
+                    tabItem.Text = content;
+                }
+
             }
             catch (Exception ex)
             {
                 if (
                     MessageBox.Show(ex.Message, "Create file failed. Retry?", MessageBoxButton.YesNo,
                         MessageBoxImage.Error, MessageBoxResult.Yes) == MessageBoxResult.Yes)
-                    CreateTab(fileName);
+                    CreateTab(fileName,content);
             }
         }
 
@@ -673,7 +710,7 @@ namespace NodeMCU_Studio_2015
             _textMarkerService = new TextMarkerService(editor.Document);
             editor.TextArea.TextView.BackgroundRenderers.Add(_textMarkerService);
             editor.TextArea.TextView.LineTransformers.Add(_textMarkerService);
-            var services = editor.Document.ServiceProvider.GetService(typeof (IServiceContainer)) as IServiceContainer;
+            var services = editor.Document.ServiceProvider.GetService(typeof(IServiceContainer)) as IServiceContainer;
             if (services != null)
                 services.AddService(typeof(ITextMarkerService), _textMarkerService);
         }
@@ -714,7 +751,7 @@ namespace NodeMCU_Studio_2015
         private class MyErrorListener : BaseErrorListener
         {
             private readonly TextMarkerService _textMarkerService;
-            private readonly List<MarkerPosition> _markers; 
+            private readonly List<MarkerPosition> _markers;
             public MyErrorListener(TextMarkerService service, ref List<MarkerPosition> markers)
             {
                 _textMarkerService = service;
@@ -749,7 +786,7 @@ namespace NodeMCU_Studio_2015
                     var antlrInputStream = new AntlrInputStream(reader);
                     var lexer = new LuaLexer(antlrInputStream);
                     var tokens = new CommonTokenStream(lexer);
-                    var parser = new LuaParser(tokens) {BuildParseTree = true};
+                    var parser = new LuaParser(tokens) { BuildParseTree = true };
                     parser.RemoveErrorListeners();
                     parser.AddErrorListener(new MyErrorListener(_textMarkerService, ref markers));
                     var tree = parser.block();
@@ -760,8 +797,8 @@ namespace NodeMCU_Studio_2015
             }
             catch (Exception e)
             {
-               // MessageBox.Show(e.ToString(), "NodeMCU Studio 2015", MessageBoxButton.OK, MessageBoxImage.Error, MessageBoxResult.Yes);
-               //On error resume next
+                // MessageBox.Show(e.ToString(), "NodeMCU Studio 2015", MessageBoxButton.OK, MessageBoxImage.Error, MessageBoxResult.Yes);
+                //On error resume next
             }
 
             return newFoldings ?? new List<NewFolding>();
@@ -801,7 +838,7 @@ namespace NodeMCU_Studio_2015
                     EndOffset = context.Stop.StopIndex + 1,
                     Name = funcName
                 };
-                var foldings = new List<NewFolding> {newFolding};
+                var foldings = new List<NewFolding> { newFolding };
                 var children = base.VisitFunctiondefinition(context);
                 if (children != null)
                 {
@@ -857,13 +894,13 @@ namespace NodeMCU_Studio_2015
                 else if (result == MessageBoxResult.Cancel)
                 {
                     return;
-                } 
+                }
             }
 
             var button = sender as Button;
             if (button != null)
             {
-                var index = (Int32) button.Tag;
+                var index = (Int32)button.Tag;
                 if (_viewModel.TabItems.Count == 1)
                 {
                     Update("");
@@ -904,7 +941,8 @@ namespace NodeMCU_Studio_2015
                     if (result == MessageBoxResult.Yes)
                     {
                         File.WriteAllText(item.FilePath, item.Text);
-                    } else if (result == MessageBoxResult.Cancel)
+                    }
+                    else if (result == MessageBoxResult.Cancel)
                     {
                         e.Cancel = true;
                         break;

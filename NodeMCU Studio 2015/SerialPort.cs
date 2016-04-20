@@ -71,6 +71,8 @@ namespace NodeMCU_Studio_2015
         public bool ExecuteAndWait(string command)
         {
             var str = ExecuteWaitAndRead(command);
+
+            //ExecuteWaitAndRead 中str的处理逻辑做了修改，这里可能有问题。 了解清楚什么意思之前暂不修改。
             if (str.Length == 2 /* \r and \n */|| str.Equals("stdin:1: open a file first\r\n"))
             {
                 return false;
@@ -102,7 +104,22 @@ namespace NodeMCU_Studio_2015
                 Thread.Sleep(50);
             }
             var str = result.ToString();
-            return str.Substring(command.Length+2, str.Length-4-command.Length); // Kill the echo, '\r\n> '
+          
+            str = str.Trim();
+            if (str.IndexOf(command + "\r\n>") == 0)
+            {
+                //str = str.Substring(command.Length + 3);
+                return ">";
+            }
+            else if (str.IndexOf(command + "\r\n") == 0) { str = str.Substring(command.Length + 2); }
+
+            if (str.IndexOf("\r\n>") >= 0)
+            {
+                str = str.Substring(0, str.IndexOf("\r\n>"));
+            }
+            return str;
+
+            //return str.Substring(command.Length + 2, str.Length - 4 - command.Length );
         }
 
         public static SerialPort GetInstance()

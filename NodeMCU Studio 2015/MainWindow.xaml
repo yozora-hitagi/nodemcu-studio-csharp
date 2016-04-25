@@ -77,7 +77,10 @@
             <ToolBar>
                 <ComboBox x:Name="SerialPortComboBox" Width="80" />
                 <Button Content="{StaticResource RefreshImage}" Command="Refresh"/>
+                <ComboBox x:Name="UartBautRateComboBox" Width="80"/>
                 <Button Click="OnToggleConnect" x:Name="ConnectButton" />
+            </ToolBar>
+            <ToolBar>
                 <Button Content="{StaticResource DownloadImage}" Command="local:MainWindow.DownloadCommand" x:Name="DownloadButton"/>
                 <Button Content="{StaticResource UploadImage}" Command="local:MainWindow.UploadCommand" x:Name="UploadButton"/>
                 <Button Content="{StaticResource RunImage}" Command="local:MainWindow.RunCommand" x:Name="RunButton"/>

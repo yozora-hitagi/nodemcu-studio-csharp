@@ -55,6 +55,10 @@ namespace NodeMCU_Studio_2015
         public MainWindow()
         {
             InitializeComponent();
+            //波特率列表
+            UartBautRateComboBox.ItemsSource = new int[] { 9600, 19200, 38400, 57600, 74880, 115200, 230400, 460800, 921600 };
+            UartBautRateComboBox.SelectedIndex = 0;
+            
 
             Utilities.ResourceToList("Resources/keywords.setting", _keywords);
             Utilities.ResourceToList("Resources/methods.setting", _methods);
@@ -96,33 +100,6 @@ namespace NodeMCU_Studio_2015
             StartBackgroundSerialPortUpdateThread();
 
             StartBackgroundUpdateThread();
-
-            //new Task(() =>
-            //{
-            //    const string updateLink = "http://nodemcu-studio-2015.coding.io/pre_build/NodeMCU%20Studio%202015.exe";
-            //    var req =
-            //        WebRequest.Create(
-            //            updateLink);
-            //    req.Method = "HEAD";
-
-            //    using (var resp = req.GetResponse())
-            //    {
-            //        Int32 contentLength;
-            //        if (Int32.TryParse(resp.Headers.Get("Content-Length"), out contentLength))
-            //        {
-            //            var fileLength = new FileInfo(Assembly.GetExecutingAssembly().Location).Length;
-            //            if (fileLength != contentLength)
-            //            {
-            //                if (MessageBox.Show("A new version is available. Download?", "NodeMCU Studio 2015",
-            //                    MessageBoxButton.YesNo, MessageBoxImage.Information, MessageBoxResult.Yes) == MessageBoxResult.Yes)
-            //                {
-            //                    Process.Start("NodeMcu Updataer.exe");
-
-            //                }
-            //            }
-            //        }
-            //    }
-            //}).Start();
         }
 
         private void InitConnect()
@@ -147,6 +124,7 @@ namespace NodeMCU_Studio_2015
                         ConnectMenuItem.Icon = _connectedImageMenuItem;
 
                         SerialPortComboBox.IsEnabled = false;
+                        UartBautRateComboBox.IsEnabled = false;
                     }
                     else
                     {
@@ -154,6 +132,7 @@ namespace NodeMCU_Studio_2015
                         ConnectMenuItem.Icon = _disconnectedImageMenuItem;
 
                         SerialPortComboBox.IsEnabled = true;
+                        UartBautRateComboBox.IsEnabled = true;
                     }
                 });
             };
@@ -281,12 +260,11 @@ namespace NodeMCU_Studio_2015
             DoSerialPortAction(
                 () =>
                 {
-                    ExecuteWaitAndRead("for k, v in pairs(file.list()) do", _ =>
-                        ExecuteWaitAndRead("print(k)", __ => ExecuteWaitAndRead("end", str => { result = str; })));
+                    ExecuteWaitAndRead("for k, v in pairs(file.list()) do print(k) end",str => { result = str; });
                 }, () =>
                 {
-                    window.FileListComboBox.ItemsSource = result.Replace("\r", "").Split('\n').Where(s => !String.IsNullOrEmpty(s));
-                    window.FileListComboBox.SelectedIndex = 0;
+                        window.FileListComboBox.ItemsSource = result.Replace("\r", "").Split('\n').Where(s => !String.IsNullOrEmpty(s));
+                        window.FileListComboBox.SelectedIndex = 0;
                 });
 
             window.SelectButton.Click += delegate
@@ -335,8 +313,7 @@ namespace NodeMCU_Studio_2015
         {
             SelectAndDoAction("Delete", (s) =>
             {
-                DoSerialPortAction(
-                    () => ExecuteWaitAndRead(string.Format("file.remove(\"{0}\")", Utilities.Escape(s))));
+                ExecuteWaitAndRead(string.Format("file.remove(\"{0}\")", Utilities.Escape(s)));
             });
         }
 
@@ -357,22 +334,19 @@ namespace NodeMCU_Studio_2015
                         {
                             ExecuteWaitAndRead("print(file.readline())", line =>
                             {
+                                if (String.IsNullOrEmpty(line)) throw new Exception();
+
                                 builder.Append(line);
                             });
                         }
-                        catch (IgnoreMeException)
-                        {
-                            // ignore
-                            break;
-                        }
+                        catch (Exception) { break; }
                     }
                     res = builder.ToString();
-                    SerialPort.GetInstance()
-                        .ExecuteAndWait("file.close()");
+                    ExecuteWaitAndRead("file.close()");
 
                 }), () =>
                 {
-                    CreateTab(null,res);
+                    CreateTab(null, res);
                     CurrentTabItem.Text = res;
                 });
             });
@@ -395,14 +369,9 @@ namespace NodeMCU_Studio_2015
                 lock (SerialPort.GetInstance().Lock)
                 {
                     SerialPort.GetInstance().FireIsWorkingChanged(true);
-
                     try
                     {
                         callback();
-                    }
-                    catch (IgnoreMeException)
-                    {
-                        // Ignore me.
                     }
                     catch (Exception exception)
                     {
@@ -424,20 +393,18 @@ namespace NodeMCU_Studio_2015
             task.Start();
         }
 
+ 
         private static void ExecuteWaitAndRead(string command, Action<string> callback)
         {
-            var line = SerialPort.GetInstance().ExecuteWaitAndRead(command);
-            //ExecuteWaitAndRead 中str的处理逻辑做了修改，这里可能有问题。 了解清楚什么意思之前暂不修改。
-            if (line.Length == 0 /* \r and \n */ || line.Equals("stdin:1: open a file first\r\n"))
-            {
-                throw new IgnoreMeException();
-            }
+            var line = SerialPort.GetInstance().Execute(command);
+            line = null == line ? "" : line;
             callback(line);
         }
 
-        private static void ExecuteWaitAndRead(string command)
+        private static bool ExecuteWaitAndRead(string command)
         {
             ExecuteWaitAndRead(command, _ => { });
+            return true;
         }
 
         private static IEnumerable<String> ReadLinesFrom(String s)
@@ -505,16 +472,15 @@ namespace NodeMCU_Studio_2015
                             ReadLinesFrom(CurrentTabItem.Text)
                                 .Any(
                                     line =>
-                                        !SerialPort.GetInstance()
-                                            .ExecuteAndWait(string.Format("file.writeline(\"{0}\")",
+                                        !ExecuteWaitAndRead(string.Format("file.writeline(\"{0}\")",
                                                 Utilities.Escape(line)))))
                         {
-                            SerialPort.GetInstance().ExecuteAndWait("file.close()");
+                            ExecuteWaitAndRead("file.close()");
                             MessageBox.Show("Download to device failed!", "NodeMCU Studio 2015", MessageBoxButton.OK, MessageBoxImage.Information, MessageBoxResult.Yes);
                         }
                         else
                         {
-                            if (!SerialPort.GetInstance().ExecuteAndWait("file.close()"))
+                            if (!ExecuteWaitAndRead("file.close()"))
                             {
                                 MessageBox.Show("Download to device succeeded!", "NodeMCU Studio 2015", MessageBoxButton.OK, MessageBoxImage.Information, MessageBoxResult.Yes);
                             }
@@ -596,8 +562,12 @@ namespace NodeMCU_Studio_2015
             {
                 MessageBox.Show("Please select a serial port or plug the device first!", "NodeMCU Studio 2015", MessageBoxButton.OK, MessageBoxImage.Error, MessageBoxResult.Yes);
                 return false;
+            }else if (UartBautRateComboBox.SelectedItem == null)
+            {
+                MessageBox.Show("Please select a bautrate first!", "NodeMCU Studio 2015", MessageBoxButton.OK, MessageBoxImage.Error, MessageBoxResult.Yes);
+                return false;
             }
-            else if (!SerialPort.GetInstance().Open(SerialPortComboBox.SelectedItem.ToString()))
+            else if (!SerialPort.GetInstance().Open(SerialPortComboBox.SelectedItem.ToString(), (int)UartBautRateComboBox.SelectedValue))
             {
                 MessageBox.Show("Cannot open serial port!", "NodeMCU Studio 2015", MessageBoxButton.OK, MessageBoxImage.Error, MessageBoxResult.Yes);
                 return false;
@@ -612,42 +582,7 @@ namespace NodeMCU_Studio_2015
 
         private void RefreshSerialPort()
         {
-            var ports = SerialPort.GetPortNames();
-            SerialPortComboBox.ItemsSource = ports;
-            if (ports.Length != 0)
-            {
-                SerialPortComboBox.IsEnabled = true;
-            }
-            else
-            {
-                var source = new string[1];
-                source[0] = "No Device";
-                SerialPortComboBox.ItemsSource = source;
-                SerialPortComboBox.IsEnabled = false;
-            }
-
-            SerialPortComboBox.SelectedIndex = 0;
-
-            foreach (var port in ports)
-            {
-                if (SerialPort.GetInstance().Open(port))
-                {
-                    try
-                    {
-                        var line = SerialPort.GetInstance().ExecuteWaitAndRead("print(\"test\")");
-                        if(line.Equals("test"))
-                        {
-                            SerialPortComboBox.SelectedValue = port;
-                            break;
-                        }
-                    }
-                    finally
-                    {
-                        SerialPort.GetInstance().Close();
-                    }
-                }
-            }
-
+            SerialPortComboBox.ItemsSource = SerialPort.GetPortNames();
         }
 
         private void CreateTab(string fileName,string content)
@@ -950,10 +885,7 @@ namespace NodeMCU_Studio_2015
                 }
             }
         }
+
     }
 
-    [Serializable]
-    internal class IgnoreMeException : Exception
-    {
-    }
 }

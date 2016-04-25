@@ -10,11 +10,20 @@ namespace NodeMCU_Studio_2015
 {
     class SerialPort : IDisposable
     {
+        public static int Default_BaudRate = 9600;
+
         private static SerialPort _instance;
         public readonly SP CurrentSp;
         public readonly object Lock = new object();
 
         private const int MaxRetries = 100;
+
+        //private int _baudrate=9600;
+        //public int BaudRate
+        //{
+        //    get { return _baudrate; }
+        //    set { _baudrate = value; CurrentSp.BaudRate = value; }
+        //}
 
         private SerialPort()
         {
@@ -43,17 +52,18 @@ namespace NodeMCU_Studio_2015
             if (!CurrentSp.IsOpen) return;
 
             CurrentSp.Close();
-            if (IsOpenChanged != null) {
+            if (IsOpenChanged != null)
+            {
                 IsOpenChanged.Invoke(CurrentSp.IsOpen);
             }
         }
 
-        public bool Open(string port)
+        public bool Open(string port,int bautrate)
         {
             try
             {
                 Close();
-                CurrentSp.BaudRate = 9600;
+                CurrentSp.BaudRate = bautrate;
                 CurrentSp.ReadTimeout = 0;
                 CurrentSp.PortName = port;
                 CurrentSp.Open();
@@ -68,19 +78,8 @@ namespace NodeMCU_Studio_2015
 
         private readonly Regex _end = new Regex("\n>+ $");
 
-        public bool ExecuteAndWait(string command)
-        {
-            var str = ExecuteWaitAndRead(command);
 
-            //ExecuteWaitAndRead 中str的处理逻辑做了修改，这里可能有问题。 了解清楚什么意思之前暂不修改。
-            if (str.Length == 2 /* \r and \n */|| str.Equals("stdin:1: open a file first\r\n"))
-            {
-                return false;
-            }
-            return true;
-        }
-
-        public string ExecuteWaitAndRead(string command)
+        public string Execute(string command)
         {
             var early = CurrentSp.ReadExisting();
             if (OnDataReceived != null)
@@ -104,13 +103,10 @@ namespace NodeMCU_Studio_2015
                 Thread.Sleep(50);
             }
             var str = result.ToString();
-          
+
             str = str.Trim();
-            if (str.IndexOf(command + "\r\n>") == 0)
-            {
-                //str = str.Substring(command.Length + 3);
-                return ">";
-            }
+
+            if (str.IndexOf(command + "\r\n>") == 0) { return null; }
             else if (str.IndexOf(command + "\r\n") == 0) { str = str.Substring(command.Length + 2); }
 
             if (str.IndexOf("\r\n>") >= 0)

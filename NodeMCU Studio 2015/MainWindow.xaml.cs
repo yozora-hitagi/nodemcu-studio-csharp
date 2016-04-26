@@ -58,7 +58,7 @@ namespace NodeMCU_Studio_2015
             //波特率列表
             UartBautRateComboBox.ItemsSource = new int[] { 9600, 19200, 38400, 57600, 74880, 115200, 230400, 460800, 921600 };
             UartBautRateComboBox.SelectedIndex = 0;
-            
+
 
             Utilities.ResourceToList("Resources/keywords.setting", _keywords);
             Utilities.ResourceToList("Resources/methods.setting", _methods);
@@ -79,7 +79,7 @@ namespace NodeMCU_Studio_2015
 
             InitConnect();
 
-            SerialPort.GetInstance().IsWorkingChanged += delegate (bool isWorking)
+            SerialPort.GetInstance().IsWorkingChanged += delegate(bool isWorking)
             {
                 EnsureWorkInUiThread(() =>
                 {
@@ -88,12 +88,32 @@ namespace NodeMCU_Studio_2015
                 });
             };
 
-            SerialPort.GetInstance().OnDataReceived += delegate (string data)
+            SerialPort.GetInstance().OnDataReceived += delegate(string data)
             {
                 EnsureWorkInUiThread(() =>
                 {
                     ConsoleTextEditor.AppendText(data);
                     ConsoleTextEditor.ScrollToEnd();
+
+                    if (data.IndexOf("ide_") == 0)
+                    {
+                        ConsoleTextEditor.AppendText("\r\n");
+                        switch (data)
+                        {
+                            case "ide_help":
+                                ConsoleTextEditor.AppendText("cmd: ide_clean");
+                                break;
+                            case "ide_clean":
+                                ConsoleTextEditor.Text = "";
+                                break;
+                            default:
+                                ConsoleTextEditor.AppendText("Unknown ide_ command(use 'ide_help' for more info).");
+                                break;
+                        }
+                        ConsoleTextEditor.AppendText("\r\n>");
+                        ConsoleTextEditor.ScrollToEnd();
+                    }
+                    
                 });
             };
 
@@ -114,7 +134,7 @@ namespace NodeMCU_Studio_2015
             ConnectButton.Content = _disconnectedImage;
             ConnectMenuItem.Icon = _disconnectedImageMenuItem;
 
-            SerialPort.GetInstance().IsOpenChanged += delegate (bool isOpen)
+            SerialPort.GetInstance().IsOpenChanged += delegate(bool isOpen)
             {
                 EnsureWorkInUiThread(() =>
                 {
@@ -260,11 +280,11 @@ namespace NodeMCU_Studio_2015
             DoSerialPortAction(
                 () =>
                 {
-                    ExecuteWaitAndRead("for k, v in pairs(file.list()) do print(k) end",str => { result = str; });
+                    ExecuteWaitAndRead("for k, v in pairs(file.list()) do print(k) end", str => { result = str; });
                 }, () =>
                 {
-                        window.FileListComboBox.ItemsSource = result.Replace("\r", "").Split('\n').Where(s => !String.IsNullOrEmpty(s));
-                        window.FileListComboBox.SelectedIndex = 0;
+                    window.FileListComboBox.ItemsSource = result.Replace("\r", "").Split('\n').Where(s => !String.IsNullOrEmpty(s));
+                    window.FileListComboBox.SelectedIndex = 0;
                 });
 
             window.SelectButton.Click += delegate
@@ -393,7 +413,7 @@ namespace NodeMCU_Studio_2015
             task.Start();
         }
 
- 
+
         private static void ExecuteWaitAndRead(string command, Action<string> callback)
         {
             var line = SerialPort.GetInstance().Execute(command);
@@ -409,7 +429,7 @@ namespace NodeMCU_Studio_2015
 
         private static IEnumerable<String> ReadLinesFrom(String s)
         {
-           // var regex = new Regex("\\s*--[^[]");
+            // var regex = new Regex("\\s*--[^[]");
             using (var reader = new StringReader(s))
             {
                 String line;
@@ -500,7 +520,7 @@ namespace NodeMCU_Studio_2015
             if (dialog.ShowDialog() == true)
             {
                 foreach (var filename in dialog.FileNames)
-                    CreateTab(filename,null);
+                    CreateTab(filename, null);
             }
         }
 
@@ -562,7 +582,8 @@ namespace NodeMCU_Studio_2015
             {
                 MessageBox.Show("Please select a serial port or plug the device first!", "NodeMCU Studio 2015", MessageBoxButton.OK, MessageBoxImage.Error, MessageBoxResult.Yes);
                 return false;
-            }else if (UartBautRateComboBox.SelectedItem == null)
+            }
+            else if (UartBautRateComboBox.SelectedItem == null)
             {
                 MessageBox.Show("Please select a bautrate first!", "NodeMCU Studio 2015", MessageBoxButton.OK, MessageBoxImage.Error, MessageBoxResult.Yes);
                 return false;
@@ -585,7 +606,7 @@ namespace NodeMCU_Studio_2015
             SerialPortComboBox.ItemsSource = SerialPort.GetPortNames();
         }
 
-        private void CreateTab(string fileName,string content)
+        private void CreateTab(string fileName, string content)
         {
             try
             {
@@ -616,7 +637,7 @@ namespace NodeMCU_Studio_2015
                 if (
                     MessageBox.Show(ex.Message, "Create file failed. Retry?", MessageBoxButton.YesNo,
                         MessageBoxImage.Error, MessageBoxResult.Yes) == MessageBoxResult.Yes)
-                    CreateTab(fileName,content);
+                    CreateTab(fileName, content);
             }
         }
 

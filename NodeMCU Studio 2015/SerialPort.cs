@@ -81,6 +81,13 @@ namespace NodeMCU_Studio_2015
 
         public string Execute(string command)
         {
+            //拦截ide命令
+            if (command.IndexOf("ide_") == 0)
+            {
+                OnDataReceived.Invoke(command);
+                return null;
+            }
+
             var early = CurrentSp.ReadExisting();
             if (OnDataReceived != null)
             {

@@ -57,7 +57,7 @@ namespace NodeMCU_Studio_2015
             InitializeComponent();
             //波特率列表
             UartBautRateComboBox.ItemsSource = new int[] { 9600, 19200, 38400, 57600, 74880, 115200, 230400, 460800, 921600 };
-            UartBautRateComboBox.SelectedIndex = 0;
+            UartBautRateComboBox.SelectedValue = 115200;
 
 
             Utilities.ResourceToList("Resources/keywords.setting", _keywords);

@@ -56,7 +56,7 @@ namespace NodeMCU_Studio_2015
         {
             InitializeComponent();
             //波特率列表
-            UartBautRateComboBox.ItemsSource = new int[] { 9600, 19200, 38400, 57600, 74880, 115200, 230400, 460800, 921600 };
+            UartBautRateComboBox.ItemsSource = new int[] { 300, 600, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 74880, 115200, 230400, 256000, 460800, 921600, 1843200, 3686400 };
             UartBautRateComboBox.SelectedValue = 115200;
 
 
@@ -264,6 +264,7 @@ namespace NodeMCU_Studio_2015
         {
             if (disposing)
             {
+                
             }
         }
 
@@ -771,7 +772,7 @@ namespace NodeMCU_Studio_2015
             }
         }
 
-        private void OnObjectExplorerItemDoubleClick(object sender, RoutedEventArgs e)
+        private void OnObjectExplorerItemClick(object sender, RoutedEventArgs e)
         {
             var folding = ObjectExplorerListBox.SelectedItem as NewFolding;
             if (folding != null) _viewModel.Editor.CaretOffset = folding.StartOffset;
